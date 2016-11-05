@@ -13,9 +13,12 @@ import scipy.linalg as la
 simTime=3.0
 dt=0.1
 
+# x[k+1] = Ax[k] + Bu[k]
+# y[k] = Cx[k]
 A=np.matrix([[1.1,2.0],[0,0.95]])
 B=np.matrix([0.0,0.0787]).T
 C=np.matrix([-2,1])
+Kopt=None
 
 def Observation(x):
     y=C*x
@@ -44,8 +47,11 @@ def dlqr(A,B,Q,R):
     return K, X, eigVals
 
 def LQRController(x,u):
-    K,X,ev=dlqr(A,B,C.T*np.eye(1)*C,np.eye(1))
-    u=-K*x
+    global Kopt
+    if Kopt is None:
+        Kopt,X,ev=dlqr(A,B,C.T*np.eye(1)*C,np.eye(1))
+
+    u=-Kopt*x
     return u
 
 def Main():
