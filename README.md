@@ -6,3 +6,9 @@ Advanced Control Python Codes
 Linear-Quadratic Regulator sample code
 
 ![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/lqr_sample/result.png)
+
+# finitte_horizon_optimal_control
+
+finite horizon optimal control sample code
+
+![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/finitte_horizon_optimal/result.png)
