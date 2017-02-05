@@ -5,12 +5,12 @@ unittest code
 author Atsushi Sakai
 """
 import sys
+sys.path.append("../mpc_modeling")
+print(sys.path)
+
 import unittest
 import numpy as np
 import mpc_modeling.mpc_modeling as mpc_modeling
-
-sys.path.append("../mpc_modeling")
-print(sys.path)
 
 
 class Test(unittest.TestCase):
