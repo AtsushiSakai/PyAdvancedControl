@@ -13,7 +13,7 @@ print(sys.path)
 
 import unittest
 import numpy as np
-import mpc_modeling
+import mpc_modeling.mpc_modeling
 
 
 class Test(unittest.TestCase):
@@ -30,13 +30,13 @@ class Test(unittest.TestCase):
 
         x0 = np.matrix([[1.0], [2.0]])  # init state
 
-        x, u = mpc_modeling.use_modeling_tool(A, B, N, Q, R, P, x0)
+        x, u = mpc_modeling.mpc_modeling.use_modeling_tool(A, B, N, Q, R, P, x0)
 
         rx1 = np.array(x[0, :]).flatten()
         rx2 = np.array(x[1, :]).flatten()
         ru = np.array(u[0, :]).flatten()
 
-        x, u = mpc_modeling.hand_modeling(A, B, N, Q, R, P, x0)
+        x, u = mpc_modeling.mpc_modeling.hand_modeling(A, B, N, Q, R, P, x0)
         x1 = np.array(x[:, 0]).flatten()
         x2 = np.array(x[:, 1]).flatten()
 
