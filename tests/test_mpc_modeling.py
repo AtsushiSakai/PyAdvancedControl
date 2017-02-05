@@ -4,6 +4,8 @@ unittest code
 
 author Atsushi Sakai
 """
+import sys
+sys.path.append('./mpc_modeling')
 
 import unittest
 import numpy as np
