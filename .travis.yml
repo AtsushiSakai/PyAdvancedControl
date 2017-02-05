@@ -1,8 +1,16 @@
 language: python
 python:
   - 2.7
+addons:
+  apt:
+    packages:
+      - libblas-dev
+      - liblapack-dev
+      - gfortran
 install:
-  - pip install cvxopt
+  - pip install -U pip pip-tools
+  - pip-compile
+  - pip install -r requirements.txt
 script:
   - python --version
   - ./test_run.sh
