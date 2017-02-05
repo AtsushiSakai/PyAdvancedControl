@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/AtsushiSakai/PyAdvancedControl.svg?branch=master)](https://travis-ci.org/AtsushiSakai/PyAdvancedControl)
 
-Advanced Control Python Codes
+Python Codes for Advanced Control
 
 # lqr_sample
 
