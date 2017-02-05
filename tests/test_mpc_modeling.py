@@ -4,13 +4,13 @@ unittest code
 
 author Atsushi Sakai
 """
+import os
 import sys
-sys.path.append("../mpc_modeling")
-print(sys.path)
-
 import unittest
 import numpy as np
 import mpc_modeling.mpc_modeling as mpc_modeling
+
+print(os.getcwd())
 
 
 class Test(unittest.TestCase):
