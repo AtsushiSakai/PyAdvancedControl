@@ -7,10 +7,9 @@ addons:
       - liblapack-dev
       - gfortran
 install:
-  - pip install -U pip pip-tools
-  - pip-compile
-  - pip install -r requirements.txt
-script:
+  - sudo pip install -U pip pip-tools
+  - sudo pip-compile
+  - sudo pip install -r requirements.txt
 script:
   - python --version
   - ./test_run.sh
