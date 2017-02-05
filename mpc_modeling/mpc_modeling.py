@@ -10,7 +10,7 @@ from cvxopt import matrix
 import scipy.linalg
 
 
-def use_modeling_tool(A, B, N, Q, R, P, x0):
+def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None):
     (nx, nu) = B.shape
 
     # mpc calculation
@@ -31,14 +31,17 @@ def use_modeling_tool(A, B, N, Q, R, P, x0):
     prob = cvxpy.Problem(cvxpy.Minimize(costlist), constrlist)
 
     prob.constraints += [x[:, 0] == x0]  # inital state constraints
-    #  prob.constraints += [cvxpy.abs(u) <= umax]  # input constraints
+    if umax is not None:
+        prob.constraints += [u <= umax]  # input constraints
+    if umin is not None:
+        prob.constraints += [u >= umin]  # input constraints
 
     prob.solve(verbose=True)
 
     return x.value, u.value
 
 
-def hand_modeling(A, B, N, Q, R, P, x0):
+def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
     # calc AA
     Ai = A
@@ -65,10 +68,34 @@ def hand_modeling(A, B, N, Q, R, P, x0):
     gx0 = BB.T * QQ * AA * x0
     #  print(gx0)
 
-    P = matrix(H)
-    q = matrix(gx0)
-    sol = cvxopt.solvers.qp(P, q)
-    #  print(sol)
+    if umax is None and umin is None:
+        P = matrix(H)
+        q = matrix(gx0)
+        sol = cvxopt.solvers.qp(P, q)
+        #  print(sol)
+    else:
+        P = matrix(H)
+        q = matrix(gx0)
+
+        G = np.matrix([])
+        h = np.matrix([])
+
+        if umax is not None:
+            G = np.eye(N)
+            h = np.ones((N, 1)) * umax
+
+        if umin is not None:
+            if umax is None:
+                G = np.eye(N) * -1.0
+                h = np.ones((N, 1)) * umin * -1.0
+            else:
+                G = np.concatenate((G, np.eye(N) * -1.0), axis=0)
+                h = np.concatenate((h, np.ones((N, 1)) * umin * -1.0), axis=0)
+
+        G = matrix(G)
+        h = matrix(h)
+
+        sol = cvxopt.solvers.qp(P, q, G, h)
 
     u = np.matrix(sol["x"])
 
@@ -79,7 +106,51 @@ def hand_modeling(A, B, N, Q, R, P, x0):
     return x, u
 
 
-def main():
+def test2():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 10  # number of horizon
+    Q = np.eye(nx)
+    R = np.eye(nu)
+    P = np.eye(nx)
+    umax = 0.7
+    umin = -0.7
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umin=umin)
+
+    rx1 = np.array(x[0, :]).flatten()
+    rx2 = np.array(x[1, :]).flatten()
+    ru = np.array(u[0, :]).flatten()
+
+    flg, ax = plt.subplots(1)
+    plt.plot(rx1, label="x1")
+    plt.plot(rx2, label="x2")
+    plt.plot(ru, label="u")
+    plt.legend()
+    plt.grid(True)
+
+    x, u = hand_modeling(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umin=umin)
+    x1 = np.array(x[:, 0]).flatten()
+    x2 = np.array(x[:, 1]).flatten()
+
+    #  flg, ax = plt.subplots(1)
+    plt.plot(x1, '*r', label="x1")
+    plt.plot(x2, '*b', label="x2")
+    plt.plot(u, '*k', label="u")
+    plt.legend()
+    plt.grid(True)
+
+    plt.show()
+
+
+def test1():
     print("start!!")
     A = np.matrix([[0.8, 1.0], [0, 0.9]])
     print(A)
@@ -127,4 +198,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #  test1()
+    test2()
