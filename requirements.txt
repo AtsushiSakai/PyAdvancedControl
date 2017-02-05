@@ -1,5 +1,6 @@
 CVXcanon==0.1.1
 cvxpy==0.4.8
+cvxopt==1.1.9
 cycler==0.10.0
 dill==0.2.5
 ecos==2.0.4
