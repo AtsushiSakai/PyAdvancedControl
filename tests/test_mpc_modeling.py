@@ -13,7 +13,7 @@ print(sys.path)
 
 import unittest
 import numpy as np
-from mpc_modeling import mpc_modeling
+import mpc_modeling
 
 
 class Test(unittest.TestCase):
