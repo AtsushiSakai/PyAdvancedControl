@@ -8,6 +8,8 @@ import os
 import sys
 
 print(os.getcwd())
+sys.path.append(os.getcwd() + "/mpc_modeling")
+print(sys.path)
 
 import unittest
 import numpy as np
