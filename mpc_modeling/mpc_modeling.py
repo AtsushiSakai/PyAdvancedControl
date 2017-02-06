@@ -116,7 +116,7 @@ def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
     return x, u
 
 
-def hand_modeling2(A, B, N, Q, R, P, x0, xmin, xmax, umax=None, umin=None):
+def hand_modeling2(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=None):
     (nx, nu) = B.shape
 
     H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(np.eye(N - 1), Q), np.eye(P.shape[0]))
@@ -134,16 +134,37 @@ def hand_modeling2(A, B, N, Q, R, P, x0, xmin, xmax, umax=None, umin=None):
     #  print(Ae.shape)
 
     # calc be
-    #  be = [Azeros((N - 1) * nx, nx)] * x0
     be = np.concatenate((A, np.zeros(((N - 1) * nx, nx))), axis=0) * x0
     #  print(be)
 
+    # === optimization ===
     P = matrix(H)
     q = matrix(np.zeros((N * nx + N * nu, 1)))
     A = matrix(Ae)
     b = matrix(be)
 
-    sol = cvxopt.solvers.qp(P, q, A=A, b=b)
+    if umax is None and umin is None:
+        sol = cvxopt.solvers.qp(P, q, A=A, b=b)
+    else:
+        G = np.zeros((0, (nx + nu) * N))
+        h = np.zeros((0, 1))
+        if umax is not None:
+            tG = np.hstack([np.eye(N), np.zeros((N, nx * N))])
+            G = np.vstack([G, tG])
+            th = np.ones((N, 1)) * umax
+            h = np.vstack([h, th])
+
+        if umin is not None:
+            tG = np.hstack([np.eye(N) * -1.0, np.zeros((N, nx * N))])
+            G = np.vstack([G, tG])
+            th = np.ones((N, 1)) * umin * -1.0
+            h = np.vstack([h, th])
+
+        G = matrix(G)
+        h = matrix(h)
+
+        sol = cvxopt.solvers.qp(P, q, G, h, A=A, b=b)
+
     #  print(sol)
     fx = np.matrix(sol["x"])
     #  print(fx)
@@ -258,17 +279,17 @@ def test3():
     Q = np.eye(nx)
     R = np.eye(nu)
     P = np.eye(nx)
-    #  umax = 0.7
-    #  umin = -0.7
+    umax = 0.7
+    umin = -0.7
 
     x0 = np.matrix([[1.0], [2.0]])  # init state
 
-    xmin = np.matrix([[-3.5], [-0.5]])  # init state
-    xmax = np.matrix([[3.5], [2.0]])  # init state
+    #  xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
+    #  xmax = np.matrix([[3.5], [2.0]])  # state constraints
 
     #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
-    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
-    x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -283,8 +304,8 @@ def test3():
 
     #  print(ru)
 
-    x, u = hand_modeling2(A, B, N, Q, R, P, x0, xmin, xmax)
-    #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    #  x, u = hand_modeling2(A, B, N, Q, R, P, x0)
+    x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umin=umin)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
