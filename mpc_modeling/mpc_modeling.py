@@ -10,7 +10,7 @@ from cvxopt import matrix
 import scipy.linalg
 
 
-def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None):
+def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xmax=None):
     (nx, nu) = B.shape
 
     # mpc calculation
@@ -26,7 +26,16 @@ def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
         constrlist += [x[:, t + 1] == A * x[:, t] + B * u[:, t]]
 
+        if xmin is not None:
+            constrlist += [x[:, t] >= xmin]
+        if xmax is not None:
+            constrlist += [x[:, t] <= xmax]
+
     costlist += 0.5 * cvxpy.quad_form(x[:, N], P)  # terminal cost
+    if xmin is not None:
+        constrlist += [x[:, N] >= xmin]
+    if xmax is not None:
+        constrlist += [x[:, N] <= xmax]
 
     prob = cvxpy.Problem(cvxpy.Minimize(costlist), constrlist)
 
@@ -42,6 +51,7 @@ def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
 
 def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
+    (nx, nu) = B.shape
 
     # calc AA
     Ai = A
@@ -101,7 +111,48 @@ def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
     # recover x
     xx = AA * x0 + BB * u
-    x = np.concatenate((x0.T, xx.reshape(N, 2)), axis=0)
+    x = np.concatenate((x0.T, xx.reshape(N, nx)), axis=0)
+
+    return x, u
+
+
+def hand_modeling2(A, B, N, Q, R, P, x0, xmin, xmax, umax=None, umin=None):
+    (nx, nu) = B.shape
+
+    H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(np.eye(N - 1), Q), np.eye(P.shape[0]))
+    #  print(H)
+
+    # calc Ae
+    Aeu = np.kron(np.eye(N), -B)
+    #  print(Aeu)
+    #  print(Aeu.shape)
+    Aex = scipy.linalg.block_diag(np.eye((N - 1) * nx), P)
+    Aex -= np.kron(np.diag([1.0] * (N - 1), k=-1), A)
+    #  print(Aex)
+    #  print(Aex.shape)
+    Ae = np.concatenate((Aeu, Aex), axis=1)
+    #  print(Ae.shape)
+
+    # calc be
+    #  be = [Azeros((N - 1) * nx, nx)] * x0
+    be = np.concatenate((A, np.zeros(((N - 1) * nx, nx))), axis=0) * x0
+    #  print(be)
+
+    P = matrix(H)
+    q = matrix(np.zeros((N * nx + N * nu, 1)))
+    A = matrix(Ae)
+    b = matrix(be)
+
+    sol = cvxopt.solvers.qp(P, q, A=A, b=b)
+    #  print(sol)
+    fx = np.matrix(sol["x"])
+    #  print(fx)
+
+    u = fx[0:N * nu].reshape(N, nu).T
+    x = fx[-N * nx:].reshape(N, nx).T
+    x = np.concatenate((x0, x), axis=1)
+    #  print(x)
+    #  print(u)
 
     return x, u
 
@@ -197,6 +248,59 @@ def test1():
     plt.show()
 
 
+def test3():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 10  # number of horizon
+    Q = np.eye(nx)
+    R = np.eye(nu)
+    P = np.eye(nx)
+    #  umax = 0.7
+    #  umin = -0.7
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+
+    xmin = np.matrix([[-3.5], [-0.5]])  # init state
+    xmax = np.matrix([[3.5], [2.0]])  # init state
+
+    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
+
+    rx1 = np.array(x[0, :]).flatten()
+    rx2 = np.array(x[1, :]).flatten()
+    ru = np.array(u[0, :]).flatten()
+
+    flg, ax = plt.subplots(1)
+    plt.plot(rx1, label="x1")
+    plt.plot(rx2, label="x2")
+    plt.plot(ru, label="u")
+    plt.legend()
+    plt.grid(True)
+
+    #  print(ru)
+
+    x, u = hand_modeling2(A, B, N, Q, R, P, x0, xmin, xmax)
+    #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umin=umin)
+    x1 = np.array(x[0, :]).flatten()
+    x2 = np.array(x[1, :]).flatten()
+    u = np.array(u).flatten()
+
+    #  flg, ax = plt.subplots(1)
+    plt.plot(x1, '*r', label="x1")
+    plt.plot(x2, '*b', label="x2")
+    plt.plot(u, '*k', label="u")
+    plt.legend()
+    plt.grid(True)
+
+    plt.show()
+
+
 if __name__ == '__main__':
     #  test1()
-    test2()
+    #  test2()
+    test3()
