@@ -151,15 +151,27 @@ def hand_modeling2(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=N
         G = np.zeros((0, (nx + nu) * N))
         h = np.zeros((0, 1))
         if umax is not None:
-            tG = np.hstack([np.eye(N), np.zeros((N, nx * N))])
+            tG = np.hstack([np.eye(N * nu), np.zeros((N * nu, nx * N))])
+            th = np.kron(np.ones((N, 1)), umax)
             G = np.vstack([G, tG])
-            th = np.ones((N, 1)) * umax
             h = np.vstack([h, th])
 
         if umin is not None:
-            tG = np.hstack([np.eye(N) * -1.0, np.zeros((N, nx * N))])
+            tG = np.hstack([np.eye(N * nu) * -1.0, np.zeros((N * nu, nx * N))])
+            th = np.kron(np.ones((N, 1)), umin * -1.0)
             G = np.vstack([G, tG])
-            th = np.ones((N, 1)) * umin * -1.0
+            h = np.vstack([h, th])
+
+        if xmax is not None:
+            tG = np.hstack([np.zeros((N * nx, nu * N)), np.eye(N * nx)])
+            th = np.kron(np.ones((N, 1)), xmax)
+            G = np.vstack([G, tG])
+            h = np.vstack([h, th])
+
+        if xmin is not None:
+            tG = np.hstack([np.zeros((N * nx, nu * N)), np.eye(N * nx) * -1.0])
+            th = np.kron(np.ones((N, 1)), xmin * -1.0)
+            G = np.vstack([G, tG])
             h = np.vstack([h, th])
 
         G = matrix(G)
@@ -368,6 +380,102 @@ def test4():
         plt.show()
 
 
+def test5():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 10  # number of horizon
+    Q = np.eye(nx)
+    R = np.eye(nu)
+    P = np.eye(nx)
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+    umax = 0.7
+
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax)
+
+    rx1 = np.array(x[0, :]).flatten()
+    rx2 = np.array(x[1, :]).flatten()
+    ru = np.array(u[0, :]).flatten()
+
+    flg, ax = plt.subplots(1)
+    plt.plot(rx1, label="x1")
+    plt.plot(rx2, label="x2")
+    plt.plot(ru, label="u")
+    plt.legend()
+    plt.grid(True)
+
+    x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax)
+    x1 = np.array(x[0, :]).flatten()
+    x2 = np.array(x[1, :]).flatten()
+    u = np.array(u).flatten()
+
+    #  flg, ax = plt.subplots(1)
+    plt.plot(x1, '*r', label="x1")
+    plt.plot(x2, '*b', label="x2")
+    plt.plot(u, '*k', label="u")
+    plt.legend()
+    plt.grid(True)
+
+    test_output_check(rx1, rx2, ru, x1, x2, u)
+
+    if DEBUG_:
+        plt.show()
+
+
+def test6():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 10  # number of horizon
+    Q = np.eye(nx)
+    R = np.eye(nu)
+    P = np.eye(nx)
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+    umax = 0.7
+    umin = -0.7
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+
+    xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
+    xmax = np.matrix([[3.5], [2.0]])  # state constraints
+
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+
+    rx1 = np.array(x[0, :]).flatten()
+    rx2 = np.array(x[1, :]).flatten()
+    ru = np.array(u[0, :]).flatten()
+
+    flg, ax = plt.subplots(1)
+    plt.plot(rx1, label="x1")
+    plt.plot(rx2, label="x2")
+    plt.plot(ru, label="u")
+    plt.legend()
+    plt.grid(True)
+
+    x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x1 = np.array(x[0, :]).flatten()
+    x2 = np.array(x[1, :]).flatten()
+    u = np.array(u).flatten()
+
+    #  flg, ax = plt.subplots(1)
+    plt.plot(x1, '*r', label="x1")
+    plt.plot(x2, '*b', label="x2")
+    plt.plot(u, '*k', label="u")
+    plt.legend()
+    plt.grid(True)
+
+    if DEBUG_:
+        plt.show()
+
+    test_output_check(rx1, rx2, ru, x1, x2, u)
+
+
 def test_output_check(rx1, rx2, ru, x1, x2, u):
     print("test x1")
     for (i, j) in zip(rx1, x1):
@@ -388,4 +496,6 @@ if __name__ == '__main__':
     #  test1()
     #  test2()
     #  test3()
-    test4()
+    #  test4()
+    #  test5()
+    test6()
