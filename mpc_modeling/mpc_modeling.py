@@ -1,5 +1,11 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*
+"""
+Model predictive control sample code without modeling tool (cvxpy)
+
+author: Atsushi Sakai
+
+"""
 
 import cvxpy
 import numpy as np
@@ -13,6 +19,9 @@ DEBUG_ = False
 
 
 def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xmax=None):
+    """
+    solve MPC with modeling tool for test
+    """
     (nx, nu) = B.shape
 
     # mpc calculation
@@ -52,7 +61,15 @@ def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xma
     return x.value, u.value
 
 
-def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
+def opt_mpc_with_input_const(A, B, N, Q, R, P, x0, umax=None, umin=None):
+    """
+    optimize model predictive control only with input constraints
+    (if you want to solve a problem with state constraints, you can use opt_mpc_with_state_const())
+
+    return
+        x: state
+        u: state
+    """
     (nx, nu) = B.shape
 
     # calc AA
@@ -60,7 +77,7 @@ def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
     AA = Ai
     for i in range(2, N + 1):
         Ai = A * Ai
-        AA = np.concatenate((AA, Ai), axis=0)
+        AA = np.vstack((AA, Ai))
     #  print(AA)
 
     # calc BB
@@ -79,30 +96,27 @@ def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
     gx0 = BB.T * QQ * AA * x0
     #  print(gx0)
+    P = matrix(H)
+    q = matrix(gx0)
 
     if umax is None and umin is None:
-        P = matrix(H)
-        q = matrix(gx0)
         sol = cvxopt.solvers.qp(P, q)
         #  print(sol)
     else:
-        P = matrix(H)
-        q = matrix(gx0)
-
-        G = np.matrix([])
-        h = np.matrix([])
+        G = np.zeros((0, nu * N))
+        h = np.zeros((0, 1))
 
         if umax is not None:
-            G = np.eye(N)
-            h = np.ones((N, 1)) * umax
+            tG = np.eye(N * nu)
+            th = np.kron(np.ones((N * nu, 1)), umax)
+            G = np.vstack([G, tG])
+            h = np.vstack([h, th])
 
         if umin is not None:
-            if umax is None:
-                G = np.eye(N) * -1.0
-                h = np.ones((N, 1)) * umin * -1.0
-            else:
-                G = np.concatenate((G, np.eye(N) * -1.0), axis=0)
-                h = np.concatenate((h, np.ones((N, 1)) * umin * -1.0), axis=0)
+            tG = np.eye(N * nu) * -1.0
+            th = np.kron(np.ones((N * nu, 1)), umin * -1.0)
+            G = np.vstack([G, tG])
+            h = np.vstack([h, th])
 
         G = matrix(G)
         h = matrix(h)
@@ -113,12 +127,54 @@ def hand_modeling(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
     # recover x
     xx = AA * x0 + BB * u
-    x = np.concatenate((x0.T, xx.reshape(N, nx)), axis=0)
+    x = np.vstack((x0.T, xx.reshape(N, nx)))
 
     return x, u
 
 
-def hand_modeling2(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=None):
+def generate_inequalities_constraints_mat(N, nx, nu, xmin, xmax, umin, umax):
+    """
+    generate matrices of inequalities constrints
+
+    return G, h
+    """
+    G = np.zeros((0, (nx + nu) * N))
+    h = np.zeros((0, 1))
+    if umax is not None:
+        tG = np.hstack([np.eye(N * nu), np.zeros((N * nu, nx * N))])
+        th = np.kron(np.ones((N * nu, 1)), umax)
+        G = np.vstack([G, tG])
+        h = np.vstack([h, th])
+
+    if umin is not None:
+        tG = np.hstack([np.eye(N * nu) * -1.0, np.zeros((N * nu, nx * N))])
+        th = np.kron(np.ones((N, 1)), umin * -1.0)
+        G = np.vstack([G, tG])
+        h = np.vstack([h, th])
+
+    if xmax is not None:
+        tG = np.hstack([np.zeros((N * nx, nu * N)), np.eye(N * nx)])
+        th = np.kron(np.ones((N, 1)), xmax)
+        G = np.vstack([G, tG])
+        h = np.vstack([h, th])
+
+    if xmin is not None:
+        tG = np.hstack([np.zeros((N * nx, nu * N)), np.eye(N * nx) * -1.0])
+        th = np.kron(np.ones((N, 1)), xmin * -1.0)
+        G = np.vstack([G, tG])
+        h = np.vstack([h, th])
+
+    return G, h
+
+
+def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=None):
+    """
+    optimize MPC problem with state and (or) input constraints
+
+    return
+        x: state
+        u: input
+    """
     (nx, nu) = B.shape
 
     H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(np.eye(N - 1), Q), np.eye(P.shape[0]))
@@ -132,11 +188,11 @@ def hand_modeling2(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=N
     Aex -= np.kron(np.diag([1.0] * (N - 1), k=-1), A)
     #  print(Aex)
     #  print(Aex.shape)
-    Ae = np.concatenate((Aeu, Aex), axis=1)
+    Ae = np.hstack((Aeu, Aex))
     #  print(Ae.shape)
 
     # calc be
-    be = np.concatenate((A, np.zeros(((N - 1) * nx, nx))), axis=0) * x0
+    be = np.vstack((A, np.zeros(((N - 1) * nx, nx)))) * x0
     #  print(be)
 
     # === optimization ===
@@ -148,31 +204,7 @@ def hand_modeling2(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=N
     if umax is None and umin is None:
         sol = cvxopt.solvers.qp(P, q, A=A, b=b)
     else:
-        G = np.zeros((0, (nx + nu) * N))
-        h = np.zeros((0, 1))
-        if umax is not None:
-            tG = np.hstack([np.eye(N * nu), np.zeros((N * nu, nx * N))])
-            th = np.kron(np.ones((N, 1)), umax)
-            G = np.vstack([G, tG])
-            h = np.vstack([h, th])
-
-        if umin is not None:
-            tG = np.hstack([np.eye(N * nu) * -1.0, np.zeros((N * nu, nx * N))])
-            th = np.kron(np.ones((N, 1)), umin * -1.0)
-            G = np.vstack([G, tG])
-            h = np.vstack([h, th])
-
-        if xmax is not None:
-            tG = np.hstack([np.zeros((N * nx, nu * N)), np.eye(N * nx)])
-            th = np.kron(np.ones((N, 1)), xmax)
-            G = np.vstack([G, tG])
-            h = np.vstack([h, th])
-
-        if xmin is not None:
-            tG = np.hstack([np.zeros((N * nx, nu * N)), np.eye(N * nx) * -1.0])
-            th = np.kron(np.ones((N, 1)), xmin * -1.0)
-            G = np.vstack([G, tG])
-            h = np.vstack([h, th])
+        G, h = generate_inequalities_constraints_mat(N, nx, nu, xmin, xmax, umin, umax)
 
         G = matrix(G)
         h = matrix(h)
@@ -184,12 +216,64 @@ def hand_modeling2(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=None, umin=N
     #  print(fx)
 
     u = fx[0:N * nu].reshape(N, nu).T
+
     x = fx[-N * nx:].reshape(N, nx).T
-    x = np.concatenate((x0, x), axis=1)
+    x = np.hstack((x0, x))
     #  print(x)
     #  print(u)
 
     return x, u
+
+
+def test1():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    #  print(A)
+    B = np.matrix([[-1.0], [2.0]])
+    #  print(B)
+    (nx, nu) = B.shape
+    #  print(nx, nu)
+
+    N = 10  # number of horizon
+    Q = np.eye(nx)
+    #  print(Q)
+    R = np.eye(nu)
+    #  print(R)
+    P = np.eye(nx)
+    #  print(P)
+    #  umax = 0.7
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
+
+    rx1 = np.array(x[0, :]).flatten()
+    rx2 = np.array(x[1, :]).flatten()
+    ru = np.array(u[0, :]).flatten()
+
+    flg, ax = plt.subplots(1)
+    plt.plot(rx1, label="x1")
+    plt.plot(rx2, label="x2")
+    plt.plot(ru, label="u")
+    plt.legend()
+    plt.grid(True)
+
+    x, u = opt_mpc_with_input_const(A, B, N, Q, R, P, x0)
+    x1 = np.array(x[:, 0]).flatten()
+    x2 = np.array(x[:, 1]).flatten()
+    u = np.array(u).flatten()
+
+    #  flg, ax = plt.subplots(1)
+    plt.plot(x1, '*r', label="x1")
+    plt.plot(x2, '*b', label="x2")
+    plt.plot(u, '*k', label="u")
+    plt.legend()
+    plt.grid(True)
+
+    if DEBUG_:
+        plt.show()
+
+    test_output_check(rx1, rx2, ru, x1, x2, u)
 
 
 def test2():
@@ -221,10 +305,10 @@ def test2():
     plt.legend()
     plt.grid(True)
 
-    x, u = hand_modeling(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
-    #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umin=umin)
+    x, u = opt_mpc_with_input_const(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x1 = np.array(x[:, 0]).flatten()
     x2 = np.array(x[:, 1]).flatten()
+    u = np.array(u).flatten()
 
     #  flg, ax = plt.subplots(1)
     plt.plot(x1, '*r', label="x1")
@@ -233,54 +317,10 @@ def test2():
     plt.legend()
     plt.grid(True)
 
-    plt.show()
+    if DEBUG_:
+        plt.show()
 
-
-def test1():
-    print("start!!")
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    print(A)
-    B = np.matrix([[-1.0], [2.0]])
-    print(B)
-    (nx, nu) = B.shape
-    print(nx, nu)
-
-    N = 10  # number of horizon
-    Q = np.eye(nx)
-    print(Q)
-    R = np.eye(nu)
-    print(R)
-    P = np.eye(nx)
-    print(P)
-    #  umax = 0.7
-
-    x0 = np.matrix([[1.0], [2.0]])  # init state
-
-    x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
-
-    rx1 = np.array(x[0, :]).flatten()
-    rx2 = np.array(x[1, :]).flatten()
-    ru = np.array(u[0, :]).flatten()
-
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
-
-    x, u = hand_modeling(A, B, N, Q, R, P, x0)
-    x1 = np.array(x[:, 0]).flatten()
-    x2 = np.array(x[:, 1]).flatten()
-
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
-
-    plt.show()
+    test_output_check(rx1, rx2, ru, x1, x2, u)
 
 
 def test3():
@@ -297,13 +337,7 @@ def test3():
     umin = -0.7
 
     x0 = np.matrix([[1.0], [2.0]])  # init state
-
-    #  xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
-    #  xmax = np.matrix([[3.5], [2.0]])  # state constraints
-
-    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
-    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -316,9 +350,7 @@ def test3():
     plt.legend()
     plt.grid(True)
 
-    #  x, u = hand_modeling2(A, B, N, Q, R, P, x0)
-    x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
-    #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umin=umin)
+    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -330,10 +362,10 @@ def test3():
     plt.legend()
     plt.grid(True)
 
-    test_output_check(rx1, rx2, ru, x1, x2, u)
-
     if DEBUG_:
         plt.show()
+
+    test_output_check(rx1, rx2, ru, x1, x2, u)
 
 
 def test4():
@@ -362,7 +394,7 @@ def test4():
     plt.legend()
     plt.grid(True)
 
-    x, u = hand_modeling2(A, B, N, Q, R, P, x0)
+    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -407,7 +439,7 @@ def test5():
     plt.legend()
     plt.grid(True)
 
-    x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax)
+    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -458,7 +490,7 @@ def test6():
     plt.legend()
     plt.grid(True)
 
-    x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -494,8 +526,8 @@ def test_output_check(rx1, rx2, ru, x1, x2, u):
 if __name__ == '__main__':
     DEBUG_ = True
     #  test1()
-    #  test2()
+    test2()
     #  test3()
     #  test4()
     #  test5()
-    test6()
+    #  test6()
