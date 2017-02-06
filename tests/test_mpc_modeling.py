@@ -154,6 +154,10 @@ class Test(unittest.TestCase):
             print(i, j)
             assert (i - j) <= 0.0001, "Error"
 
+    def test_4(self):
+        mpc_modeling.mpc_modeling.test3()
+        mpc_modeling.mpc_modeling.test4()
+
 
 if __name__ == '__main__':
     unittest.main()

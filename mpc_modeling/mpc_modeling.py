@@ -9,6 +9,8 @@ import cvxopt
 from cvxopt import matrix
 import scipy.linalg
 
+DEBUG_ = False
+
 
 def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xmax=None):
     (nx, nu) = B.shape
@@ -302,8 +304,6 @@ def test3():
     plt.legend()
     plt.grid(True)
 
-    #  print(ru)
-
     #  x, u = hand_modeling2(A, B, N, Q, R, P, x0)
     x, u = hand_modeling2(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     #  x, u = hand_modeling(A, B, N, Q, R, P, x0, umin=umin)
@@ -318,10 +318,74 @@ def test3():
     plt.legend()
     plt.grid(True)
 
-    plt.show()
+    test_output_check(rx1, rx2, ru, x1, x2, u)
+
+    if DEBUG_:
+        plt.show()
+
+
+def test4():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 10  # number of horizon
+    Q = np.eye(nx)
+    R = np.eye(nu)
+    P = np.eye(nx)
+
+    x0 = np.matrix([[1.0], [2.0]])  # init state
+
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
+
+    rx1 = np.array(x[0, :]).flatten()
+    rx2 = np.array(x[1, :]).flatten()
+    ru = np.array(u[0, :]).flatten()
+
+    flg, ax = plt.subplots(1)
+    plt.plot(rx1, label="x1")
+    plt.plot(rx2, label="x2")
+    plt.plot(ru, label="u")
+    plt.legend()
+    plt.grid(True)
+
+    x, u = hand_modeling2(A, B, N, Q, R, P, x0)
+    x1 = np.array(x[0, :]).flatten()
+    x2 = np.array(x[1, :]).flatten()
+    u = np.array(u).flatten()
+
+    #  flg, ax = plt.subplots(1)
+    plt.plot(x1, '*r', label="x1")
+    plt.plot(x2, '*b', label="x2")
+    plt.plot(u, '*k', label="u")
+    plt.legend()
+    plt.grid(True)
+
+    test_output_check(rx1, rx2, ru, x1, x2, u)
+
+    if DEBUG_:
+        plt.show()
+
+
+def test_output_check(rx1, rx2, ru, x1, x2, u):
+    print("test x1")
+    for (i, j) in zip(rx1, x1):
+        print(i, j)
+        assert (i - j) <= 0.0001, "Error"
+    print("test x2")
+    for (i, j) in zip(rx2, x2):
+        print(i, j)
+        assert (i - j) <= 0.0001, "Error"
+    print("test u")
+    for (i, j) in zip(ru, u):
+        print(i, j)
+        assert (i - j) <= 0.0001, "Error"
 
 
 if __name__ == '__main__':
+    DEBUG_ = True
     #  test1()
     #  test2()
-    test3()
+    #  test3()
+    test4()
