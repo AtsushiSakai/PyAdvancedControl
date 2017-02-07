@@ -42,3 +42,11 @@ This figure is a comparison of MPC results with and without modeling tool.
 ![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/mpc_modeling/result.png)
 
 
+# tools
+
+## c2d
+
+This is a API compatible function of MATLAB c2d function. 
+
+[Convert model from continuous to discrete time MATLAB c2d](https://jp.mathworks.com/help/control/ref/c2d.html)
+
