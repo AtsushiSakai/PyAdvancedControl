@@ -68,7 +68,7 @@ def opt_mpc_with_input_const(A, B, N, Q, R, P, x0, umax=None, umin=None):
 
     return
         x: state
-        u: state
+        u: input
     """
     (nx, nu) = B.shape
 
@@ -526,8 +526,8 @@ def test_output_check(rx1, rx2, ru, x1, x2, u):
 if __name__ == '__main__':
     DEBUG_ = True
     #  test1()
-    test2()
+    #  test2()
     #  test3()
     #  test4()
     #  test5()
-    #  test6()
+    test6()
