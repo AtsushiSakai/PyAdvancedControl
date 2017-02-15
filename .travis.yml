@@ -13,6 +13,7 @@ before_install:
 install:
     - conda install -y -c cvxgrp cvxpy
     - conda install -y -c conda-forge matplotlib
+    - conda install -y -c anaconda cvxopt
 
 script:
     - python --version
