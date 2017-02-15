@@ -13,6 +13,8 @@ import scipy.linalg
 from cvxopt import matrix
 import cvxopt
 
+DEBUG_ = False
+
 
 def get_mat_psi(A, N):
     psi = np.matrix(np.zeros((0, A.shape[1])))
@@ -24,25 +26,32 @@ def get_mat_psi(A, N):
 
 
 def get_mat_gamma(A, B, N):
-
+    (nx, nu) = B.shape
     gamma = B
 
     for i in range(1, N):
-        gamma = np.vstack((gamma, (A ** i) * B + gamma[-1, :]))
-
-    #  print(gamma)
+        tmat = (A ** i) * B + gamma[-nx:, :]
+        gamma = np.vstack((gamma, tmat))
 
     return gamma
 
 
 def get_mat_theta(A, B, N):
     AiB = B
+    (nx, nu) = B.shape
     theta = np.kron(np.eye(N), AiB)
-    for i in range(1, N):
-        AiB = A * AiB
-        theta += np.kron(np.diag(np.ones(N - i), -i), AiB)
 
-    #  print(theta)
+    tmat = np.zeros((nx, 0))
+
+    for i in range(1, N):
+        t = np.zeros((nx, nu)) + B
+        for ii in range(1, i + 1):
+            t += (A ** ii) * B
+        tmat = np.hstack((t, tmat))
+
+    for i in range(1, N):
+        theta[i * nx:(i + 1) * nx, :i] += tmat[:, -i:]
+
     return theta
 
 
@@ -76,10 +85,9 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0):
     ffx = np.vstack((x0.T, ffx))
     #  print(ffx)
 
-    plt.plot(ffx[:, 0])
-    plt.plot(ffx[:, 1])
-    plt.grid(True)
-    plt.show()
+    u = np.cumsum(du).T
+
+    return ffx, u
 
 
 def test1():
@@ -88,7 +96,7 @@ def test1():
     B = np.matrix([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
-    N = 100  # number of horizon
+    N = 50  # number of horizon
     Q = np.diag([1, 1.0])
     R = np.eye(nu)
 
@@ -98,7 +106,30 @@ def test1():
     T = np.matrix([1.0, 0.25] * N).T
     #  print(T)
 
-    model_predictive_control(A, B, N, Q, R, T, x0, u0)
+    x, u = model_predictive_control(A, B, N, Q, R, T, x0, u0)
+
+    plt.plot(x[:, 0])
+    plt.plot(x[:, 1])
+    plt.plot(u[:, 0])
+    plt.grid(True)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    #  print(rx)
+    plt.plot(rx[0, :].T, "xr")
+    plt.plot(rx[1, :].T, "xb")
+
+    if DEBUG_:
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
 
 
 if __name__ == '__main__':
