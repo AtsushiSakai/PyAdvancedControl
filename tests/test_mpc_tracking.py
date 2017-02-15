@@ -5,6 +5,10 @@ unittest code
 author Atsushi Sakai
 """
 import unittest
+
+import sys
+sys.path.append("./mpc_tracking/")
+
 import mpc_tracking.mpc_tracking
 
 
