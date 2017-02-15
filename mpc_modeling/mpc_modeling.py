@@ -260,26 +260,27 @@ def test1():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     x, u = opt_mpc_with_input_const(A, B, N, Q, R, P, x0)
     x1 = np.array(x[:, 0]).flatten()
     x2 = np.array(x[:, 1]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
-
     if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
+
         plt.show()
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
@@ -307,26 +308,27 @@ def test2():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     x, u = opt_mpc_with_input_const(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x1 = np.array(x[:, 0]).flatten()
     x2 = np.array(x[:, 1]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
-
     if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
+
         plt.show()
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
@@ -352,26 +354,27 @@ def test3():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
-
     if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
+
         plt.show()
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
@@ -396,24 +399,26 @@ def test4():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
 
@@ -441,29 +446,30 @@ def test5():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
+
+        plt.show()
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
-
-    if DEBUG_:
-        plt.show()
 
 
 def test6():
@@ -492,26 +498,27 @@ def test6():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
-
     if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
+
         plt.show()
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
@@ -545,12 +552,13 @@ def test7():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
-    flg, ax = plt.subplots(1)
-    plt.plot(rx1, label="x1")
-    plt.plot(rx2, label="x2")
-    plt.plot(ru, label="u")
-    plt.legend()
-    plt.grid(True)
+    if DEBUG_:
+        flg, ax = plt.subplots(1)
+        plt.plot(rx1, label="x1")
+        plt.plot(rx2, label="x2")
+        plt.plot(ru, label="u")
+        plt.legend()
+        plt.grid(True)
 
     #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
     x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
@@ -559,14 +567,14 @@ def test7():
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
 
-    #  flg, ax = plt.subplots(1)
-    plt.plot(x1, '*r', label="x1")
-    plt.plot(x2, '*b', label="x2")
-    plt.plot(u, '*k', label="u")
-    plt.legend()
-    plt.grid(True)
-
     if DEBUG_:
+        #  flg, ax = plt.subplots(1)
+        plt.plot(x1, '*r', label="x1")
+        plt.plot(x2, '*b', label="x2")
+        plt.plot(u, '*k', label="u")
+        plt.legend()
+        plt.grid(True)
+
         plt.show()
 
     test_output_check(rx1, rx2, ru, x1, x2, u)
