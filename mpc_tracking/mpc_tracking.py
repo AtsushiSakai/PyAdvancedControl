@@ -108,11 +108,6 @@ def test1():
 
     x, u = model_predictive_control(A, B, N, Q, R, T, x0, u0)
 
-    plt.plot(x[:, 0])
-    plt.plot(x[:, 1])
-    plt.plot(u[:, 0])
-    plt.grid(True)
-
     # test
     tx = x0
     rx = x0
@@ -120,11 +115,15 @@ def test1():
         tx = A * tx + B * iu
         rx = np.hstack((rx, tx))
 
-    #  print(rx)
-    plt.plot(rx[0, :].T, "xr")
-    plt.plot(rx[1, :].T, "xb")
-
     if DEBUG_:
+        plt.plot(x[:, 0])
+        plt.plot(x[:, 1])
+        plt.plot(u[:, 0])
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr")
+        plt.plot(rx[1, :].T, "xb")
+
         plt.show()
 
     for ii in range(len(x[0, :]) + 1):
