@@ -12,7 +12,7 @@ before_install:
     - sudo ln -s /run/shm /dev/shm
 install:
     - conda install -y -c cvxgrp cvxpy
-    - conda install -c conda-forge matplotlib
+    - conda install -y -c conda-forge matplotlib
 
 script:
     - python --version
