@@ -1,16 +1,18 @@
 language: python
 python:
   - 2.7
-addons:
-  apt:
-    packages:
-      - libblas-dev
-      - liblapack-dev
-      - gfortran
 before_install:
-  - wget http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-4.5.3.tar.gz
-  - tar -xf SuiteSparse-4.5.3.tar.gz
-  - export CVXOPT_SUITESPARSE_SRC_DIR=$(pwd)/SuiteSparse
+    - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - "./miniconda.sh -b"
+    - export PATH=/home/travis/miniconda2/bin:$PATH
+    - conda update --yes conda
+    - sudo rm -rf /dev/shm
+    - sudo ln -s /run/shm /dev/shm
+install:
+    - conda install cvxpy
+
 script:
-  - python --version
-  - ./test_run.sh
+    - python --version
+    - ./test_run.sh
+
