@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*
 """
 
+MPC tracking sample code
+
 author: Atsushi Sakai
 
 """
@@ -27,7 +29,7 @@ def get_mat_psi(A, N):
 
 def get_mat_gamma(A, B, N):
     (nx, nu) = B.shape
-    gamma = B
+    gamma = np.zeros((nx, nu)) + B
 
     for i in range(1, N):
         tmat = (A ** i) * B + gamma[-nx:, :]
@@ -70,14 +72,16 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0):
 
     H = theta.T * QQ * theta + RR
     #  print(H)
-    g = -2.0 * theta.T * QQ * (T - psi * x0 - gamma * u0)
+    g = - theta.T * QQ * (T - psi * x0 - gamma * u0)
     #  print(g)
+    #  print(u0)
 
     P = matrix(H)
     q = matrix(g)
     sol = cvxopt.solvers.qp(P, q)
     #  print(sol["x"])
     du = np.matrix(sol["x"])
+    #  print(du)
 
     fx = psi * x0 + gamma * u0 + theta * du
 
@@ -85,7 +89,8 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0):
     ffx = np.vstack((x0.T, ffx))
     #  print(ffx)
 
-    u = np.cumsum(du).T
+    u = np.cumsum(du).T + u0
+    #  print(u)
 
     return ffx, u
 
@@ -97,7 +102,7 @@ def test1():
     (nx, nu) = B.shape
 
     N = 50  # number of horizon
-    Q = np.diag([1, 1.0])
+    Q = np.diag([1.0, 1.0])
     R = np.eye(nu)
 
     x0 = np.matrix([2.0, 1.0]).T
@@ -130,7 +135,195 @@ def test1():
         for (i, j) in zip(rx[ii, :].T, x[:, ii]):
             assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
 
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+
+def test2():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 50  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([2.0, 1.0]).T
+    u0 = np.matrix([0.1])
+
+    T = np.matrix([1.0, 0.25] * N).T
+    #  print(T)
+
+    x, u = model_predictive_control(A, B, N, Q, R, T, x0, u0)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0])
+        plt.plot(x[:, 1])
+        plt.plot(u[:, 0])
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr")
+        plt.plot(rx[1, :].T, "xb")
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+
+def test3():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 50  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([2.0, 1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([1.0, 0.25] * N).T
+    #  print(T)
+
+    x, u = model_predictive_control(A, B, N, Q, R, T, x0, u0)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0])
+        plt.plot(x[:, 1])
+        plt.plot(u[:, 0])
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr")
+        plt.plot(rx[1, :].T, "xb")
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+
+def test4():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 50  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, 1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([1.0, 0.25] * N).T
+    #  print(T)
+
+    x, u = model_predictive_control(A, B, N, Q, R, T, x0, u0)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0])
+        plt.plot(x[:, 1])
+        plt.plot(u[:, 0])
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr")
+        plt.plot(rx[1, :].T, "xb")
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+
+def test5():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 50  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, -1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([1.0, 0.25] * N).T
+    #  print(T)
+
+    x, u = model_predictive_control(A, B, N, Q, R, T, x0, u0)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0])
+        plt.plot(x[:, 1])
+        plt.plot(u[:, 0])
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr")
+        plt.plot(rx[1, :].T, "xb")
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
 
 if __name__ == '__main__':
     DEBUG_ = True
-    test1()
+    #  test1()
+    #  test2()
+    #  test3()
+    #  test4()
+    test5()
