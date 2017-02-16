@@ -281,7 +281,7 @@ def test5():
     B = np.matrix([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
-    N = 50  # number of horizon
+    N = 30  # number of horizon
     Q = np.diag([1.0, 1.0])
     R = np.eye(nu)
 

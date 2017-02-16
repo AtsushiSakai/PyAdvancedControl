@@ -19,9 +19,15 @@ This is a finite horizon optimal control sample code
 
 # mpc_sample 
 
-This is a sample code of a simple Model Predictive Control (MPC) Simulation
+This is a sample code of a simple Model Predictive Control (MPC) regulator simulation
 
 ![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/mpc_sample/result.png)
+
+# mpc_tracking 
+
+This is a sample code of a Model Predictive Control (MPC) traget tracking simulation
+
+![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/mpc_tracking/result.png)
 
 # mpc_modeling 
 
