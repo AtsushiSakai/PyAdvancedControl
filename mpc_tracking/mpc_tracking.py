@@ -301,13 +301,15 @@ def test5():
         rx = np.hstack((rx, tx))
 
     if DEBUG_:
-        plt.plot(x[:, 0])
-        plt.plot(x[:, 1])
-        plt.plot(u[:, 0])
+        plt.plot(x[:, 0], label="x1")
+        plt.plot(x[:, 1], label="x2")
+        plt.plot(u[:, 0], label="u")
         plt.grid(True)
         #  print(rx)
-        plt.plot(rx[0, :].T, "xr")
-        plt.plot(rx[1, :].T, "xb")
+        plt.plot(rx[0, :].T, "xr", label="model x1")
+        plt.plot(rx[1, :].T, "xb", label="model x2")
+
+        plt.legend()
 
         plt.show()
 
