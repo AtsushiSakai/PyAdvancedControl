@@ -29,6 +29,9 @@ class Test(unittest.TestCase):
     def test_5(self):
         mpc_tracking.mpc_tracking.test5()
 
+    def test_6(self):
+        mpc_tracking.mpc_tracking.test5()
+
 
 if __name__ == '__main__':
     unittest.main()
