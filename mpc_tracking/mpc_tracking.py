@@ -403,8 +403,8 @@ def test6():
         assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
 
     for i in du:
-        assert i <= maxdu, "Error" + str(i) + "," + str(maxdu)
-        assert i >= mindu, "Error" + str(i) + "," + str(mindu)
+        assert i <= maxdu + 0.0001, "Error" + str(i) + "," + str(maxdu)
+        assert i >= mindu - 0.0001, "Error" + str(i) + "," + str(mindu)
 
 
 def test7():
@@ -458,8 +458,63 @@ def test7():
         assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
 
     for i in du:
-        assert i <= maxdu, "Error" + str(i) + "," + str(maxdu)
-        assert i >= mindu, "Error" + str(i) + "," + str(mindu)
+        assert i <= maxdu + 0.0001, "Error" + str(i) + "," + str(maxdu)
+        assert i >= mindu - 0.0001, "Error" + str(i) + "," + str(mindu)
+
+
+def test8():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 30  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, -1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([0.0, 0.0] * N).T
+    #  print(T)
+
+    maxdu = 0.2
+    mindu = -0.3
+
+    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0], label="x1")
+        plt.plot(x[:, 1], label="x2")
+        plt.plot(u[:, 0], label="u")
+        plt.plot(du, label="du")
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr", label="model x1")
+        plt.plot(rx[1, :].T, "xb", label="model x2")
+
+        plt.legend()
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+    for i in du:
+        assert i <= maxdu + 0.0001, "Error" + str(i) + "," + str(maxdu)
+        assert i >= mindu - 0.0001, "Error" + str(i) + "," + str(mindu)
 
 
 if __name__ == '__main__':
@@ -470,4 +525,5 @@ if __name__ == '__main__':
     #  test4()
     #  test5()
     #  test6()
-    test7()
+    #  test7()
+    test8()

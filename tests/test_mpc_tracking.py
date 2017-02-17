@@ -30,7 +30,10 @@ class Test(unittest.TestCase):
         mpc_tracking.mpc_tracking.test5()
 
     def test_6(self):
-        mpc_tracking.mpc_tracking.test5()
+        mpc_tracking.mpc_tracking.test6()
+
+    def test_7(self):
+        mpc_tracking.mpc_tracking.test7()
 
 
 if __name__ == '__main__':
