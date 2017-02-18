@@ -35,6 +35,15 @@ class Test(unittest.TestCase):
     def test_7(self):
         mpc_tracking.mpc_tracking.test7()
 
+    def test_8(self):
+        mpc_tracking.mpc_tracking.test8()
+
+    def test_9(self):
+        mpc_tracking.mpc_tracking.test9()
+
+    def test_10(self):
+        mpc_tracking.mpc_tracking.test10()
+
 
 if __name__ == '__main__':
     unittest.main()

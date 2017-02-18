@@ -74,7 +74,46 @@ def generate_du_constraints_mat(G, h, N, nu, mindu, maxdu):
     return G, h
 
 
-def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None):
+def generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu):
+
+    # calc F
+    F = np.matrix(np.zeros((0, N * nu + 1)))
+    for i in range(N * nu):
+        if maxu is not None:
+            tF = np.zeros((1, N * nu + 1))
+            tF[0, i] = 1.0 / maxu
+            tF[0, -1] = -1.0
+            F = np.vstack([F, tF])
+
+        if minu is not None:
+            tF = np.zeros((1, N * nu + 1))
+            tF[0, i] = 1.0 / minu
+            tF[0, -1] = -1.0
+            F = np.vstack([F, tF])
+
+    f = F[:, -1]
+    #  print(f)
+
+    # calc SF
+    SF = np.matrix(np.zeros((F.shape[0], F.shape[1] - 1)))
+    for i in range(0, N * nu):
+        for ii in range(i, N * nu):
+            SF[:, i] += F[:, ii]
+    #  print(SF)
+
+    SF1 = SF[:, 0]
+    #  print(SF1)
+
+    th = -SF1 * u0 - f
+    #  print(th)
+
+    G = np.vstack([G, SF])
+    h = np.vstack([h, th])
+
+    return G, h
+
+
+def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, minu=None, maxu=None):
 
     (nx, nu) = B.shape
 
@@ -96,14 +135,15 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None):
     P = matrix(H)
     q = matrix(g)
 
-    if mindu is None and maxdu is None:
+    if mindu is None and maxdu is None and maxu is None and minu is None:
         sol = cvxopt.solvers.qp(P, q)
         #  print(sol["x"])
     else:
         G = np.zeros((0, nu * N))
         h = np.zeros((0, nu))
 
-        G, h = generate_du_constraints_mat(G, h, N, nu, mindu, maxdu)
+        #  G, h = generate_du_constraints_mat(G, h, N, nu, mindu, maxdu)
+        G, h = generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu)
 
         G = matrix(G)
         h = matrix(h)
@@ -517,6 +557,116 @@ def test8():
         assert i >= mindu - 0.0001, "Error" + str(i) + "," + str(mindu)
 
 
+def test9():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 30  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, -1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([0.0, 0.0] * N).T
+    #  print(T)
+
+    maxu = 0.1
+    minu = -0.3
+
+    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, minu=minu, maxu=maxu)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0], label="x1")
+        plt.plot(x[:, 1], label="x2")
+        plt.plot(u[:, 0], label="u")
+        plt.plot(du, label="du")
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr", label="model x1")
+        plt.plot(rx[1, :].T, "xb", label="model x2")
+
+        plt.legend()
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+    for i in u:
+        assert i <= maxu + 0.0001, "Error" + str(i) + "," + str(maxu)
+        assert i >= minu - 0.0001, "Error" + str(i) + "," + str(minu)
+
+
+def test10():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 30  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, -1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([0.0, 0.0] * N).T
+    #  print(T)
+
+    #  maxu = 0.1
+    minu = -0.0001
+
+    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, minu=minu)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0], label="x1")
+        plt.plot(x[:, 1], label="x2")
+        plt.plot(u[:, 0], label="u")
+        plt.plot(du, label="du")
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr", label="model x1")
+        plt.plot(rx[1, :].T, "xb", label="model x2")
+
+        plt.legend()
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+    for i in u:
+        #  assert i <= maxu + 0.0001, "Error" + str(i) + "," + str(maxu)
+        assert i >= minu - 0.0001, "Error" + str(i) + "," + str(minu)
+
+
 if __name__ == '__main__':
     DEBUG_ = True
     #  test1()
@@ -526,4 +676,6 @@ if __name__ == '__main__':
     #  test5()
     #  test6()
     #  test7()
-    test8()
+    #  test8()
+    #  test9()
+    test10()
