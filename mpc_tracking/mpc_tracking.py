@@ -142,7 +142,7 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, m
         G = np.zeros((0, nu * N))
         h = np.zeros((0, nu))
 
-        #  G, h = generate_du_constraints_mat(G, h, N, nu, mindu, maxdu)
+        G, h = generate_du_constraints_mat(G, h, N, nu, mindu, maxdu)
         G, h = generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu)
 
         G = matrix(G)
