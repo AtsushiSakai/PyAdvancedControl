@@ -113,7 +113,46 @@ def generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu):
     return G, h
 
 
-def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, minu=None, maxu=None):
+def generate_x_constraints_mat(G, h, N, nx, u0, theta, kappa, minx, maxx):
+
+    # calc G
+    cG = np.matrix(np.zeros((0, N * nx + 1)))
+    for i in range(N):
+        if maxx is not None:
+            for ii in range(maxx.shape[1]):
+                tG = np.zeros((1, N * nx + 1))
+                tG[0, i * nx + ii] = 1.0 / maxx[0, ii]
+                tG[0, -1] = -1.0
+                cG = np.vstack([cG, tG])
+
+        if minx is not None:
+            for ii in range(minx.shape[1]):
+                tG = np.zeros((1, N * nx + 1))
+                tG[0, i * nx + ii] = 1.0 / minx[0, ii]
+                tG[0, -1] = -1.0
+                cG = np.vstack([cG, tG])
+
+    print(cG)
+
+    tau = cG[:, :-1]
+    g = cG[:, -1]
+    #  print(tau)
+    #  print(g)
+
+    tmpG = tau * theta
+    tmph = -tau * kappa - g
+    #  print(tmpG)
+    #  print(tmph)
+
+    #  print(cG)
+
+    G = np.vstack([G, tmpG])
+    h = np.vstack([h, tmph])
+
+    return G, h
+
+
+def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, minu=None, maxu=None, maxx=None, minx=None):
 
     (nx, nu) = B.shape
 
@@ -127,27 +166,25 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, m
     RR = scipy.linalg.block_diag(np.kron(np.eye(N), R))
 
     H = theta.T * QQ * theta + RR
-    #  print(H)
     g = - theta.T * QQ * (T - psi * x0 - gamma * u0)
+    #  print(H)
     #  print(g)
     #  print(u0)
 
+    G = np.zeros((0, nu * N))
+    h = np.zeros((0, nu))
+
+    G, h = generate_du_constraints_mat(G, h, N, nu, mindu, maxdu)
+    G, h = generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu)
+
+    kappa = psi * x0 + gamma * u0
+    G, h = generate_x_constraints_mat(G, h, N, nx, u0, theta, kappa, minx, maxx)
+
     P = matrix(H)
     q = matrix(g)
-
-    if mindu is None and maxdu is None and maxu is None and minu is None:
-        sol = cvxopt.solvers.qp(P, q)
-        #  print(sol["x"])
-    else:
-        G = np.zeros((0, nu * N))
-        h = np.zeros((0, nu))
-
-        G, h = generate_du_constraints_mat(G, h, N, nu, mindu, maxdu)
-        G, h = generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu)
-
-        G = matrix(G)
-        h = matrix(h)
-        sol = cvxopt.solvers.qp(P, q, G, h)
+    G = matrix(G)
+    h = matrix(h)
+    sol = cvxopt.solvers.qp(P, q, G, h)
 
     du = np.matrix(sol["x"])
     #  print(du)
@@ -667,6 +704,125 @@ def test10():
         assert i >= minu - 0.0001, "Error" + str(i) + "," + str(minu)
 
 
+def test11():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 30  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, -1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([0.0, 0.0] * N).T
+    #  print(T)
+
+    maxx = np.matrix([0.5, 0.2])
+    minx = np.matrix([-1.5, -2.5])
+
+    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, maxx=maxx, minx=minx)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0], label="x1")
+        plt.plot(x[:, 1], label="x2")
+        plt.plot(u[:, 0], label="u")
+        plt.plot(du, label="du")
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr", label="model x1")
+        plt.plot(rx[1, :].T, "xb", label="model x2")
+
+        plt.legend()
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+    for ii in range(len(x[:, 0])):
+        for i in range(len(x[0, :])):
+            assert x[ii, i] <= maxx[i, 0], "Error" + str(x[ii, i]) + "," + str(maxx[i, 0])
+            assert x[ii, i] >= minx[i, 0], "Error" + str(x[ii, i]) + "," + str(minx[i, 0])
+
+
+def test12():
+    print("start!!")
+    A = np.matrix([[0.8, 1.0], [0, 0.9]])
+    B = np.matrix([[-1.0], [2.0]])
+    (nx, nu) = B.shape
+
+    N = 30  # number of horizon
+    Q = np.diag([1.0, 1.0])
+    R = np.eye(nu)
+
+    x0 = np.matrix([0.0, -1.0]).T
+    u0 = np.matrix([-0.1])
+
+    T = np.matrix([0.0, 0.0] * N).T
+    #  print(T)
+
+    maxx = np.matrix([0.5, 0.2])
+    minx = np.matrix([-1.5, -2.5])
+
+    mindu = -0.5
+    maxdu = 0.5
+
+    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, maxx=maxx, minx=minx, maxdu=maxdu, mindu=mindu)
+
+    # test
+    tx = x0
+    rx = x0
+    for iu in u[:, 0]:
+        tx = A * tx + B * iu
+        rx = np.hstack((rx, tx))
+
+    if DEBUG_:
+        plt.plot(x[:, 0], label="x1")
+        plt.plot(x[:, 1], label="x2")
+        plt.plot(u[:, 0], label="u")
+        plt.plot(du, label="du")
+        plt.grid(True)
+        #  print(rx)
+        plt.plot(rx[0, :].T, "xr", label="model x1")
+        plt.plot(rx[1, :].T, "xb", label="model x2")
+
+        plt.legend()
+
+        plt.show()
+
+    for ii in range(len(x[0, :]) + 1):
+        for (i, j) in zip(rx[ii, :].T, x[:, ii]):
+            assert (i - j) <= 0.0001, "Error" + str(i) + "," + str(j)
+
+    target = T.reshape(N, nx)
+    for ii in range(len(x[0, :]) + 1):
+        assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
+
+    for ii in range(len(x[:, 0])):
+        for i in range(len(x[0, :])):
+            assert x[ii, i] <= maxx[i, 0], "Error" + str(x[ii, i]) + "," + str(maxx[i, 0])
+            assert x[ii, i] >= minx[i, 0], "Error" + str(x[ii, i]) + "," + str(minx[i, 0])
+
+    for i in du:
+        assert i <= maxdu + 0.0001, "Error" + str(i) + "," + str(maxdu)
+        assert i >= mindu - 0.0001, "Error" + str(i) + "," + str(mindu)
+
+
 if __name__ == '__main__':
     DEBUG_ = True
     #  test1()
@@ -678,4 +834,6 @@ if __name__ == '__main__':
     #  test7()
     #  test8()
     #  test9()
-    test10()
+    #  test10()
+    #  test11()
+    test12()
