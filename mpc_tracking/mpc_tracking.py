@@ -11,9 +11,7 @@ author: Atsushi Sakai
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.linalg
-
-from cvxopt import matrix
-import cvxopt
+import pyecosqp
 
 DEBUG_ = False
 
@@ -132,7 +130,7 @@ def generate_x_constraints_mat(G, h, N, nx, u0, theta, kappa, minx, maxx):
                 tG[0, -1] = -1.0
                 cG = np.vstack([cG, tG])
 
-    print(cG)
+    #  print(cG)
 
     tau = cG[:, :-1]
     g = cG[:, -1]
@@ -180,15 +178,15 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, m
     kappa = psi * x0 + gamma * u0
     G, h = generate_x_constraints_mat(G, h, N, nx, u0, theta, kappa, minx, maxx)
 
-    P = matrix(H)
-    q = matrix(g)
-    G = matrix(G)
-    h = matrix(h)
-    sol = cvxopt.solvers.qp(P, q, G, h)
+    #  print(H)
+    #  print(g)
+    #  print(G)
+    #  print(h)
 
-    du = np.matrix(sol["x"])
+    sol = pyecosqp.ecosqp(H, g, A=G, B=h)
+    du = np.matrix(sol["x"]).T
+
     #  print(du)
-    #  print(len(du))
 
     fx = psi * x0 + gamma * u0 + theta * du
 
@@ -244,6 +242,7 @@ def test1():
 
     target = T.reshape(N, nx)
     for ii in range(len(x[0, :]) + 1):
+        #  print(x[-1, ii] - target[-1, ii])
         assert abs(x[-1, ii] - target[-1, ii]) <= 0.3, "Error"
 
 
@@ -782,7 +781,7 @@ def test12():
     mindu = -0.5
     maxdu = 0.5
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, maxx=maxx, minx=minx, maxdu=maxdu, mindu=mindu)
+    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu, maxx=maxx, minx=minx)
 
     # test
     tx = x0

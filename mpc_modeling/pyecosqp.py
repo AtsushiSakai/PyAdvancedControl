@@ -42,7 +42,7 @@ def ecosqp(H, f, A=None, B=None, Aeq=None, Beq=None):
 
     # check cholesky
     try:
-        W = np.linalg.cholesky(H)
+        W = np.linalg.cholesky(H).T
     except np.linalg.linalg.LinAlgError:
         W = scipy.linalg.sqrtm(H)
     #  print(W)
