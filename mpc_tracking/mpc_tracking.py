@@ -150,7 +150,8 @@ def generate_x_constraints_mat(G, h, N, nx, u0, theta, kappa, minx, maxx):
     return G, h
 
 
-def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, minu=None, maxu=None, maxx=None, minx=None):
+def model_predictive_control(A, B, N, Q, R, T, x0, u0,
+                             mindu=None, maxdu=None, minu=None, maxu=None, maxx=None, minx=None):
 
     (nx, nu) = B.shape
 
@@ -176,7 +177,8 @@ def model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=None, maxdu=None, m
     G, h = generate_u_constraints_mat(G, h, N, nu, u0, minu, maxu)
 
     kappa = psi * x0 + gamma * u0
-    G, h = generate_x_constraints_mat(G, h, N, nx, u0, theta, kappa, minx, maxx)
+    G, h = generate_x_constraints_mat(
+        G, h, N, nx, u0, theta, kappa, minx, maxx)
 
     #  print(H)
     #  print(g)
@@ -252,7 +254,7 @@ def test2():
     B = np.matrix([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
-    N = 50  # number of horizon
+    N = 5  # number of horizon
     Q = np.diag([1.0, 1.0])
     R = np.eye(nu)
 
@@ -447,7 +449,8 @@ def test6():
     mindu = -0.5
     maxdu = 0.5
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
+    x, u, du = model_predictive_control(
+        A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
 
     # test
     tx = x0
@@ -502,7 +505,8 @@ def test7():
     maxdu = 0.2
     mindu = -0.3
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
+    x, u, du = model_predictive_control(
+        A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
 
     # test
     tx = x0
@@ -557,7 +561,8 @@ def test8():
     maxdu = 0.2
     mindu = -0.3
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
+    x, u, du = model_predictive_control(
+        A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu)
 
     # test
     tx = x0
@@ -612,7 +617,8 @@ def test9():
     maxu = 0.1
     minu = -0.3
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, minu=minu, maxu=maxu)
+    x, u, du = model_predictive_control(
+        A, B, N, Q, R, T, x0, u0, minu=minu, maxu=maxu)
 
     # test
     tx = x0
@@ -722,7 +728,8 @@ def test11():
     maxx = np.matrix([0.5, 0.2])
     minx = np.matrix([-1.5, -2.5])
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, maxx=maxx, minx=minx)
+    x, u, du = model_predictive_control(
+        A, B, N, Q, R, T, x0, u0, maxx=maxx, minx=minx)
 
     # test
     tx = x0
@@ -755,8 +762,10 @@ def test11():
 
     for ii in range(len(x[:, 0])):
         for i in range(len(x[0, :])):
-            assert x[ii, i] <= maxx[i, 0], "Error" + str(x[ii, i]) + "," + str(maxx[i, 0])
-            assert x[ii, i] >= minx[i, 0], "Error" + str(x[ii, i]) + "," + str(minx[i, 0])
+            assert x[ii, i] <= maxx[i, 0], "Error" + \
+                str(x[ii, i]) + "," + str(maxx[i, 0])
+            assert x[ii, i] >= minx[i, 0], "Error" + \
+                str(x[ii, i]) + "," + str(minx[i, 0])
 
 
 def test12():
@@ -781,7 +790,8 @@ def test12():
     mindu = -0.5
     maxdu = 0.5
 
-    x, u, du = model_predictive_control(A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu, maxx=maxx, minx=minx)
+    x, u, du = model_predictive_control(
+        A, B, N, Q, R, T, x0, u0, mindu=mindu, maxdu=maxdu, maxx=maxx, minx=minx)
 
     # test
     tx = x0
@@ -814,8 +824,10 @@ def test12():
 
     for ii in range(len(x[:, 0])):
         for i in range(len(x[0, :])):
-            assert x[ii, i] <= maxx[i, 0], "Error" + str(x[ii, i]) + "," + str(maxx[i, 0])
-            assert x[ii, i] >= minx[i, 0], "Error" + str(x[ii, i]) + "," + str(minx[i, 0])
+            assert x[ii, i] <= maxx[i, 0], "Error" + \
+                str(x[ii, i]) + "," + str(maxx[i, 0])
+            assert x[ii, i] >= minx[i, 0], "Error" + \
+                str(x[ii, i]) + "," + str(minx[i, 0])
 
     for i in du:
         assert i <= maxdu + 0.0001, "Error" + str(i) + "," + str(maxdu)
@@ -825,7 +837,7 @@ def test12():
 if __name__ == '__main__':
     DEBUG_ = True
     #  test1()
-    #  test2()
+    test2()
     #  test3()
     #  test4()
     #  test5()
@@ -835,4 +847,4 @@ if __name__ == '__main__':
     #  test9()
     #  test10()
     #  test11()
-    test12()
+    #  test12()

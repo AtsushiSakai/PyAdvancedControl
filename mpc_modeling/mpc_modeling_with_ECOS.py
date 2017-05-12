@@ -6,6 +6,7 @@ Model predictive control sample code without modeling tool (cvxpy)
 author: Atsushi Sakai
 
 """
+import time
 
 import numpy as np
 import scipy.linalg
@@ -78,7 +79,7 @@ def generate_inequalities_constraints_mat(N, nx, nu, xmin, xmax, umin, umax):
 
     if umin is not None:
         tG = np.hstack([np.eye(N * nu) * -1.0, np.zeros((N * nu, nx * N))])
-        th = np.kron(np.ones((N, 1)), umin * -1.0)
+        th = np.kron(np.ones((N * nu, 1)), umin * -1.0)
         G = np.vstack([G, tG])
         h = np.vstack([h, th])
 
@@ -107,23 +108,31 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
     """
     (nx, nu) = B.shape
 
-    H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(np.eye(N - 1), Q), np.eye(P.shape[0]))
+    H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(
+        np.eye(N - 1), Q), np.eye(P.shape[0]))
     #  print(H)
+    #  print(H.shape)
 
     # calc Ae
     Aeu = np.kron(np.eye(N), -B)
     #  print(Aeu)
     #  print(Aeu.shape)
     Aex = scipy.linalg.block_diag(np.eye((N - 1) * nx), P)
+    #  print(Aex)
     Aex -= np.kron(np.diag([1.0] * (N - 1), k=-1), A)
+    #  print(np.diag([1.0] * (N - 1), k=-1))
+    #  print(np.kron(np.diag([1.0] * (N - 1), k=-1), A))
+    #  print(np.kron(np.diag([1.0] * (N - 1), k=-1), A))
     #  print(Aex)
     #  print(Aex.shape)
     Ae = np.hstack((Aeu, Aex))
+    #  print(Ae)
     #  print(Ae.shape)
 
     # calc be
     be = np.vstack((A, np.zeros(((N - 1) * nx, nx)))) * x0
     #  print(be)
+    #  print(be.shape)
 
     #  np.set_printoptions(precision=3)
     #  print(H.shape)
@@ -138,12 +147,17 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
     if umax is None and umin is None:
         sol = pyecosqp.ecosqp(H, q, Aeq=Ae, Beq=be)
     else:
-        G, h = generate_inequalities_constraints_mat(N, nx, nu, xmin, xmax, umin, umax)
+        G, h = generate_inequalities_constraints_mat(
+            N, nx, nu, xmin, xmax, umin, umax)
+
+        print(h)
+        print(G)
 
         sol = pyecosqp.ecosqp(H, q, A=G, B=h, Aeq=Ae, Beq=be)
 
     #  print(sol)
     fx = np.matrix(sol["x"])
+    #  print(fx)
 
     u = fx[0, 0:N * nu].reshape(N, nu).T
     x = fx[0, -N * nx:].reshape(N, nx).T
@@ -182,7 +196,8 @@ def test3():
         plt.legend()
         plt.grid(True)
 
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -311,7 +326,8 @@ def test6():
     xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
     xmax = np.matrix([[3.5], [2.0]])  # state constraints
 
-    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0,
+                             umax=umax, umin=umin, xmin=xmin, xmax=xmax)
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -325,7 +341,8 @@ def test6():
         plt.legend()
         plt.grid(True)
 
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -380,8 +397,10 @@ def test7():
         plt.legend()
         plt.grid(True)
 
-    #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax,
+    # umin=umin, xmin=xmin, xmax=xmax)
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
@@ -407,7 +426,7 @@ def test8():
     B = np.matrix([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
-    N = 30  # number of horizon
+    N = 5  # number of horizon
     Q = np.eye(nx)
     R = np.eye(nu)
     P = np.eye(nx)
@@ -418,12 +437,19 @@ def test8():
 
     x0 = np.matrix([[1.0], [2.0]])  # init state
 
+    start = time.time()
+
     xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
     xmax = np.matrix([[3.5], [2.0]])  # state constraints
 
     #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
-    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0,
+                             umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+
     #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
+    elapsed_time = time.time() - start
+    print ("modeling tool modeling elapsed_time:{0}".format(
+        elapsed_time) + "[sec]")
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -437,12 +463,23 @@ def test8():
         plt.legend()
         plt.grid(True)
 
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
-    #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    start = time.time()
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    #  x, u = opt_mpc_with_state_constr(
+    #  A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0)
+    elapsed_time = time.time() - start
+    print ("hand modeling elapsed_time:{0}".format(elapsed_time) + "[sec]")
+
+    #  print(x)
+    print(u)
+
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
+    print(x1)
+    print(x2)
 
     if DEBUG_:
         #  flg, ax = plt.subplots(1)
@@ -461,15 +498,15 @@ def test_output_check(rx1, rx2, ru, x1, x2, u):
     print("test x1")
     for (i, j) in zip(rx1, x1):
         print(i, j)
-        assert (i - j) <= 0.0001, "Error"
+        assert (i - j) <= 0.001, "Error"
     print("test x2")
     for (i, j) in zip(rx2, x2):
         print(i, j)
-        assert (i - j) <= 0.0001, "Error"
+        assert (i - j) <= 0.001, "Error"
     print("test u")
     for (i, j) in zip(ru, u):
         print(i, j)
-        assert (i - j) <= 0.0001, "Error"
+        assert (i - j) <= 0.001, "Error"
 
 
 if __name__ == '__main__':
