@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 """
-
+Kinematic Bicycle Model
 
 author Atsushi Sakai
 """
@@ -25,17 +25,20 @@ class State:
 
 def update(state, a, delta):
 
-    state.x = state.x + state.v * math.cos(state.yaw) * dt
-    state.y = state.y + state.v * math.sin(state.yaw) * dt
-    state.yaw = state.yaw + state.v / L * math.tan(delta) * dt
+    state.beta = math.atan2(Lr / L * math.tan(delta), 1.0)
+
+    state.x = state.x + state.v * math.cos(state.yaw + state.beta) * dt
+    state.y = state.y + state.v * math.sin(state.yaw + state.beta) * dt
+    state.yaw = state.yaw + state.v / Lr * math.sin(state.beta) * dt
     state.v = state.v + a * dt
 
     return state
 
 
 if __name__ == '__main__':
-    print("start unicycle simulation")
+    print("start Kinematic Bicycle model simulation")
     import matplotlib.pyplot as plt
+    import numpy as np
 
     T = 100
     a = [1.0] * T
@@ -48,22 +51,36 @@ if __name__ == '__main__':
     y = []
     yaw = []
     v = []
+    beta = []
+    time = []
+    time = []
+    t = 0.0
 
     for (ai, di) in zip(a, delta):
+        t = t + dt
         state = update(state, ai, di)
-
         x.append(state.x)
         y.append(state.y)
         yaw.append(state.yaw)
         v.append(state.v)
+        beta.append(state.beta)
+        time.append(t)
 
     flg, ax = plt.subplots(1)
     plt.plot(x, y)
+    plt.xlabel("x[m]")
+    plt.ylabel("y[m]")
     plt.axis("equal")
     plt.grid(True)
 
     flg, ax = plt.subplots(1)
-    plt.plot(v)
+    plt.plot(time, np.array(v) * 3.6)
+    plt.xlabel("Time[km/h]")
+    plt.ylabel("velocity[m]")
     plt.grid(True)
+
+    #  flg, ax = plt.subplots(1)
+    #  plt.plot([math.degrees(ibeta) for ibeta in beta])
+    #  plt.grid(True)
 
     plt.show()
