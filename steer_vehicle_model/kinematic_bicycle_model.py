@@ -9,13 +9,13 @@ author Atsushi Sakai
 import math
 
 dt = 0.1  # [s]
-L = 5.0  # [m]
-Lr = L / 2.0  # [m]
+L = 2.9  # [m]
+Lr = 1.4  # [m]
 
 
 class State:
 
-    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0, beta=0.0):
+    def __init__(self, x=Lr, y=0.0, yaw=0.0, v=0.0, beta=0.0):
         self.x = x
         self.y = y
         self.yaw = yaw
@@ -31,6 +31,8 @@ def update(state, a, delta):
     state.y = state.y + state.v * math.sin(state.yaw + state.beta) * dt
     state.yaw = state.yaw + state.v / Lr * math.sin(state.beta) * dt
     state.v = state.v + a * dt
+
+    #  print(state.x, state.y, state.yaw, state.v)
 
     return state
 

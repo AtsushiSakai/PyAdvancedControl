@@ -9,7 +9,7 @@ author Atsushi Sakai
 import math
 
 dt = 0.1  # [s]
-L = 5.0  # [m]
+L = 2.9  # [m]
 
 
 class State:
@@ -28,6 +28,8 @@ def update(state, a, delta):
     state.yaw = state.yaw + state.v / L * math.tan(delta) * dt
     state.v = state.v + a * dt
 
+    print(state.yaw)
+
     return state
 
 
@@ -38,6 +40,7 @@ if __name__ == '__main__':
     T = 100
     a = [1.0] * T
     delta = [math.radians(1.0)] * T
+    #  print(delta)
     #  print(a, delta)
 
     state = State()
