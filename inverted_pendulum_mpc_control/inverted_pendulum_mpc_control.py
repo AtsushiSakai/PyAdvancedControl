@@ -12,6 +12,7 @@ import numpy as np
 import math
 import time
 import cvxpy
+from matplotrecorder import matplotrecorder
 
 
 l_bar = 2.0  # length of bar
@@ -31,17 +32,18 @@ def main():
     x0 = np.array([
         [0.0],
         [0.0],
-        [0.1],
+        [0.3],
         [0.0]
     ])
 
     x = np.copy(x0)
 
-    for i in range(500):
+    for i in range(50):
 
         ox, dx, otheta, dtheta, ou = mpc_control(x)
         u = ou[0]
         x = simulation(x, u)
+        print(i)
         print(x)
         print(u)
 
@@ -49,8 +51,12 @@ def main():
         px = float(x[0])
         theta = float(x[2])
         show_cart(px, theta)
+        plt.xlim([-5.0, 2.0])
         plt.pause(0.001)
         #  plt.show()
+        matplotrecorder.save_frame()
+
+    matplotrecorder.save_movie("animation.gif", 0.1)
 
 
 def simulation(x, u):

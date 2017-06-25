@@ -1,0 +1,3 @@
+[submodule "inverted_pendulum_mpc_control/matplotrecorder"]
+	path = inverted_pendulum_mpc_control/matplotrecorder
+	url = https://github.com/AtsushiSakai/matplotrecorder.git
