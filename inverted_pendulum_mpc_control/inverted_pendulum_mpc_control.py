@@ -27,6 +27,8 @@ nu = 1   # 制御入力の数
 T = 30  # 何ステップ先まで予測するかを決める
 delta_t = 0.1
 
+animation = False
+
 
 def main():
     x0 = np.array([
@@ -54,9 +56,12 @@ def main():
         plt.xlim([-5.0, 2.0])
         plt.pause(0.001)
         #  plt.show()
-        matplotrecorder.save_frame()
 
-    matplotrecorder.save_movie("animation.gif", 0.1)
+        if animation:
+            matplotrecorder.save_frame()
+
+    if animation:
+        matplotrecorder.save_movie("animation.gif", 0.1)
 
 
 def simulation(x, u):
