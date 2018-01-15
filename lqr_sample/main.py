@@ -1,6 +1,4 @@
-#! /usr/bin/python 
-# -*- coding: utf-8 -*- 
-u""" 
+"""
 Linear-Quadratic Regulator sample code
 
 author Atsushi Sakai
@@ -14,17 +12,9 @@ simTime = 3.0
 dt = 0.1
 
 # x[k+1] = Ax[k] + Bu[k]
-# y[k] = Cx[k]
 A = np.matrix([[1.1, 2.0], [0, 0.95]])
 B = np.matrix([0.0, 0.0787]).T
-C = np.matrix([-2, 1])
 Kopt = None
-
-
-def observation(x):
-    y = C * x
-    ry = float(y[0])
-    return (ry)
 
 
 def process(x, u):
@@ -41,7 +31,8 @@ def solve_DARE(A, B, Q, R):
     eps = 0.01
 
     for i in range(maxiter):
-        Xn = A.T * X * A - A.T * X * B * la.inv(R + B.T * X * B) * B.T * X * A + Q
+        Xn = A.T * X * A - A.T * X * B * \
+            la.inv(R + B.T * X * B) * B.T * X * A + Q
         if (abs(Xn - X)).max() < eps:
             X = Xn
             break
@@ -71,7 +62,7 @@ def dlqr(A, B, Q, R):
 def lqr_control(x):
     global Kopt
     if Kopt is None:
-        Kopt, X, ev = dlqr(A, B, C.T * np.eye(1) * C, np.eye(1))
+        Kopt, X, ev = dlqr(A, B, np.eye(2), np.eye(1))
 
     u = -Kopt * x
     return u
@@ -79,26 +70,30 @@ def lqr_control(x):
 
 def main():
     time = 0.0
-    u_history = []
-    y_history = []
-    time_history = []
 
     x = np.matrix([3, 1]).T
-    u = np.matrix([0, 0, 0])
+    u = np.matrix([0])
+
+    time_history = [0.0]
+    x1_history = [x[0, 0]]
+    x2_history = [x[1, 0]]
+    u_history = [0.0]
 
     while time <= simTime:
         u = lqr_control(x)
         u0 = float(u[0, 0])
         x = process(x, u0)
-        y = observation(x)
+
+        x1_history.append(x[0, 0])
+        x2_history.append(x[1, 0])
 
         u_history.append(u0)
-        y_history.append(y)
         time_history.append(time)
         time += dt
 
     plt.plot(time_history, u_history, "-r", label="input")
-    plt.plot(time_history, y_history, "-b", label="output")
+    plt.plot(time_history, x1_history, "-b", label="x1")
+    plt.plot(time_history, x2_history, "-g", label="x2")
     plt.grid(True)
     plt.xlim([0, simTime])
     plt.legend()
