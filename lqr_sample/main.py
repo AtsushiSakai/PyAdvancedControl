@@ -13,8 +13,10 @@ simTime = 3.0
 dt = 0.1
 
 # x[k+1] = Ax[k] + Bu[k]
-A = np.matrix([[1.1, 2.0], [0, 0.95]])
-B = np.matrix([0.0, 0.0787]).T
+A = np.matrix([[0.1, 1.0], [0, 0.1]])
+B = np.matrix([0.0, 0.1]).T
+Q = np.matrix([[1.0, 0.0], [0.0, 0.0]])
+R = np.matrix([[1.0]])
 Kopt = None
 
 
@@ -42,35 +44,39 @@ def solve_DARE_with_iteration(A, B, Q, R):
     return Xn
 
 
-def dlqr_with_iteration(A, B, Q, R):
+def dlqr_with_iteration(Ad, Bd, Q, R):
     """Solve the discrete time lqr controller.
-    x[k+1] = A x[k] + B u[k]
+    x[k+1] = Ad x[k] + Bd u[k]
     cost = sum x[k].T*Q*x[k] + u[k].T*R*u[k]
     # ref Bertsekas, p.151
     """
 
     # first, try to solve the ricatti equation
-    X = solve_DARE_with_iteration(A, B, Q, R)
+    X = solve_DARE_with_iteration(Ad, Bd, Q, R)
 
     # compute the LQR gain
-    K = np.matrix(la.inv(B.T * X * B + R) * (B.T * X * A))
+    K = np.matrix(la.inv(Bd.T * X * Bd + R) * (Bd.T * X * Ad))
 
-    eigVals, eigVecs = la.eig(A - B * K)
-
-    return K, X, eigVals
+    return K
 
 
-def dlqr_with_arimoto_potter(A, B, Q, R):
+def dlqr_with_arimoto_potter(Ad, Bd, Q, R):
+    """Solve the discrete time lqr controller.
+    x[k+1] = Ad x[k] + Bd u[k]
+    cost = sum x[k].T*Q*x[k] + u[k].T*R*u[k]
+    # ref Bertsekas, p.151
+    """
 
-    n = len(B)
+    n = len(Bd)
 
     # continuous
-    A = (A - np.eye(n)) / dt
-    B = B / dt
+    Ac = (Ad - np.eye(n)) / dt
+    Bc = Bd / dt
 
+    # Hamiltonian
     Ham = np.vstack(
-        (np.hstack((A, - B * la.inv(R) * B.T)),
-            np.hstack((-Q, -A.T))))
+        (np.hstack((Ac, - Bc * la.inv(R) * Bc.T)),
+         np.hstack((-Q, -Ac.T))))
 
     eigVals, eigVecs = la.eig(Ham)
 
@@ -90,18 +96,17 @@ def dlqr_with_arimoto_potter(A, B, Q, R):
 
     P = (V2 * la.inv(V1)).real
 
-    K = la.inv(R) * B.T * P
+    K = la.inv(R) * Bc.T * P
 
     return K
 
 
-def lqr_control(x):
+def lqr_regulator(x):
     global Kopt
     if Kopt is None:
         start = time.time()
-        #  Kopt, X, ev = dlqr_with_iteration(A, B, np.eye(2), np.eye(1))
+        #  Kopt = dlqr_with_iteration(A, B, np.eye(2), np.eye(1))
         Kopt = dlqr_with_arimoto_potter(A, B, np.eye(2), np.eye(1))
-        #  print(Kopt)
 
         elapsed_time = time.time() - start
         print("elapsed_time:{0}".format(elapsed_time) + "[sec]")
@@ -110,7 +115,33 @@ def lqr_control(x):
     return u
 
 
-def main():
+def lqr_ref_tracking(x, xref):
+    global Kopt
+    if Kopt is None:
+        #  start = time.time()
+        #  Kopt = dlqr_with_iteration(A, B, np.eye(2), np.eye(1))
+        Kopt = dlqr_with_arimoto_potter(A, B, Q, R)
+
+        #  elapsed_time = time.time() - start
+        #  print("elapsed_time:{0}".format(elapsed_time) + "[sec]")
+
+    #  n = len(B)
+    # continuous
+
+    # calc steady state
+    #  k1 = np.eye(len(A[:, 0])) - A
+    #  k2 = -B
+    #  k12 = np.hstack((k1, k2))
+    #  k3 = np.eye(n)
+
+    ud = 0.0
+    u = -ud - Kopt * (x - xref)
+    #  u = - Kopt * (x - xref)
+
+    return u
+
+
+def main_regulator():
     t = 0.0
 
     x = np.matrix([3, 1]).T
@@ -122,7 +153,7 @@ def main():
     u_history = [0.0]
 
     while t <= simTime:
-        u = lqr_control(x)
+        u = lqr_regulator(x)
 
         u0 = float(u[0, 0])
         x = process(x, u0)
@@ -143,5 +174,45 @@ def main():
     plt.show()
 
 
+def main_reference_tracking():
+    t = 0.0
+
+    x = np.matrix([3, 1]).T
+    xref = np.matrix([1, 2]).T
+    u = np.matrix([0])
+
+    time_history = [0.0]
+    x1_history = [x[0, 0]]
+    x2_history = [x[1, 0]]
+    u_history = [0.0]
+
+    while t <= simTime:
+        u = lqr_ref_tracking(x, xref)
+
+        u0 = float(u[0, 0])
+        x = process(x, u0)
+
+        x1_history.append(x[0, 0])
+        x2_history.append(x[1, 0])
+
+        u_history.append(u0)
+        time_history.append(t)
+        t += dt
+
+    #  plt.plot(time_history, u_history, "-r", label="input")
+    plt.plot(time_history, x1_history, "-b", label="x1")
+    plt.plot(time_history, x2_history, "-g", label="x2")
+    xref0_h = [xref[0, 0] for i in range(len(time_history))]
+    xref1_h = [xref[1, 0] for i in range(len(time_history))]
+    plt.plot(time_history, xref0_h, "--b", label="x1")
+    plt.plot(time_history, xref1_h, "--g", label="x2")
+
+    plt.grid(True)
+    plt.xlim([0, simTime])
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
-    main()
+    #  main_regulator()
+    main_reference_tracking()
