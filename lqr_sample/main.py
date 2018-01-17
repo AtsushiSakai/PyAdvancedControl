@@ -13,8 +13,8 @@ simTime = 3.0
 dt = 0.1
 
 # x[k+1] = Ax[k] + Bu[k]
-A = np.matrix([[0.1, 1.0], [0, 0.1]])
-B = np.matrix([0.0, 0.1]).T
+A = np.matrix([[1, 1.0], [0, 1]])
+B = np.matrix([0.0, 1]).T
 Q = np.matrix([[1.0, 0.0], [0.0, 0.0]])
 R = np.matrix([[1.0]])
 Kopt = None
@@ -115,7 +115,7 @@ def lqr_regulator(x):
     return u
 
 
-def lqr_ref_tracking(x, xref):
+def lqr_ref_tracking(x, xref, uref):
     global Kopt
     if Kopt is None:
         #  start = time.time()
@@ -125,18 +125,7 @@ def lqr_ref_tracking(x, xref):
         #  elapsed_time = time.time() - start
         #  print("elapsed_time:{0}".format(elapsed_time) + "[sec]")
 
-    #  n = len(B)
-    # continuous
-
-    # calc steady state
-    #  k1 = np.eye(len(A[:, 0])) - A
-    #  k2 = -B
-    #  k12 = np.hstack((k1, k2))
-    #  k3 = np.eye(n)
-
-    ud = 0.0
-    u = -ud - Kopt * (x - xref)
-    #  u = - Kopt * (x - xref)
+    u = -uref - Kopt * (x - xref)
 
     return u
 
@@ -170,6 +159,7 @@ def main_regulator():
     plt.plot(time_history, x2_history, "-g", label="x2")
     plt.grid(True)
     plt.xlim([0, simTime])
+    plt.title("LQR Regulator")
     plt.legend()
     plt.show()
 
@@ -178,8 +168,9 @@ def main_reference_tracking():
     t = 0.0
 
     x = np.matrix([3, 1]).T
-    xref = np.matrix([1, 2]).T
     u = np.matrix([0])
+    xref = np.matrix([1, 0]).T
+    uref = 0.0
 
     time_history = [0.0]
     x1_history = [x[0, 0]]
@@ -187,7 +178,7 @@ def main_reference_tracking():
     u_history = [0.0]
 
     while t <= simTime:
-        u = lqr_ref_tracking(x, xref)
+        u = lqr_ref_tracking(x, xref, uref)
 
         u0 = float(u[0, 0])
         x = process(x, u0)
@@ -199,20 +190,23 @@ def main_reference_tracking():
         time_history.append(t)
         t += dt
 
-    #  plt.plot(time_history, u_history, "-r", label="input")
+    plt.plot(time_history, u_history, "-r", label="input")
     plt.plot(time_history, x1_history, "-b", label="x1")
     plt.plot(time_history, x2_history, "-g", label="x2")
     xref0_h = [xref[0, 0] for i in range(len(time_history))]
     xref1_h = [xref[1, 0] for i in range(len(time_history))]
-    plt.plot(time_history, xref0_h, "--b", label="x1")
-    plt.plot(time_history, xref1_h, "--g", label="x2")
+    plt.plot(time_history, xref0_h, "--b", label="target x1")
+    plt.plot(time_history, xref1_h, "--g", label="target x2")
 
     plt.grid(True)
     plt.xlim([0, simTime])
+    plt.title("LQR Tracking")
     plt.legend()
     plt.show()
 
 
 if __name__ == '__main__':
+    print("Start")
     #  main_regulator()
     main_reference_tracking()
+    print("Done")
