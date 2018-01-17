@@ -60,9 +60,7 @@ This figure is a comparison of MPC results with and without modeling tool.
 
 ![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/inverted_pendulum_mpc_control/animation.gif)
 
-![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/inverted_pendulum_mpc_control/animation1.gif)
-
-![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/inverted_pendulum_mpc_control/animation2.gif)
+This is a inverted pendulum mpc control simulation.
 
 
 # tools
