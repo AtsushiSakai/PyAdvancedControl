@@ -1,4 +1,3 @@
-#! /usr/bin/python
 """
 
 Inverted Pendulum MPC control
@@ -12,7 +11,6 @@ import numpy as np
 import math
 import time
 import cvxpy
-from matplotrecorder import matplotrecorder
 
 
 l_bar = 2.0  # length of bar
@@ -22,12 +20,12 @@ g = 9.8  # [m/s^2]
 
 Q = np.diag([0.0, 1.0, 1.0, 0.0])
 R = np.diag([0.01])
-nx = 4   # 状態の数
-nu = 1   # 制御入力の数
-T = 30  # 何ステップ先まで予測するかを決める
-delta_t = 0.1
+nx = 4   # number of state
+nu = 1   # number of input
+T = 30  # Horizon length
+delta_t = 0.1  # time tick
 
-animation = False
+animation = True
 
 
 def main():
@@ -45,23 +43,14 @@ def main():
         ox, dx, otheta, dtheta, ou = mpc_control(x)
         u = ou[0]
         x = simulation(x, u)
-        print(i)
-        print(x)
-        print(u)
-
-        plt.clf()
-        px = float(x[0])
-        theta = float(x[2])
-        show_cart(px, theta)
-        plt.xlim([-5.0, 2.0])
-        plt.pause(0.001)
-        #  plt.show()
 
         if animation:
-            matplotrecorder.save_frame()
-
-    if animation:
-        matplotrecorder.save_movie("animation.gif", 0.1)
+            plt.clf()
+            px = float(x[0])
+            theta = float(x[2])
+            show_cart(px, theta)
+            plt.xlim([-5.0, 2.0])
+            plt.pause(0.001)
 
 
 def simulation(x, u):
@@ -106,7 +95,7 @@ def mpc_control(x0):
 
 
 def get_nparray_from_matrix(x):
-    u"""
+    """
     get build-in list from matrix
     """
     return np.array(x).flatten()
