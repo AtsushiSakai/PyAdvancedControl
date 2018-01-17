@@ -8,7 +8,13 @@ Python Codes for Advanced Control
 
 This is a sample code of Linear-Quadratic Regulator
 
-![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/lqr_sample/result.png)
+This is LQR regulator simulation.
+
+![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/lqr_sample/Figure_1.png)
+
+This is LQR tracking simulation.
+
+![1](https://github.com/AtsushiSakai/PyAdvancedControl/blob/master/lqr_sample/Figure_2.png)
 
 # finite_horizon_optimal_control
 
