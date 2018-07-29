@@ -6,15 +6,19 @@ Python Codes for Advanced Control
 
 # Dependencies
 
-- Python 3.5.2
+- Python 3.5.5
 
 - cvxpy 0.4.x
 
-- scipy 0.19.3
+- ecos 2.0.7
 
-- numpy 1.13.3
+- cvxopt 1.2.-
 
-- matplotlib 1.5.3
+- scipy 1.1.0
+
+- numpy 1.15.0
+
+- matplotlib 2.2.2
 
 # lqr_sample
 
