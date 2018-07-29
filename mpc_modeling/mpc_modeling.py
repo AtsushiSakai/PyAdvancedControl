@@ -1,5 +1,3 @@
-#! /usr/bin/python
-# -*- coding: utf-8 -*
 """
 Model predictive control sample code without modeling tool (cvxpy)
 
@@ -177,7 +175,8 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
     """
     (nx, nu) = B.shape
 
-    H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(np.eye(N - 1), Q), np.eye(P.shape[0]))
+    H = scipy.linalg.block_diag(np.kron(np.eye(N), R), np.kron(
+        np.eye(N - 1), Q), np.eye(P.shape[0]))
     #  print(H)
 
     # calc Ae
@@ -211,7 +210,8 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
     if umax is None and umin is None:
         sol = cvxopt.solvers.qp(P, q, A=A, b=b)
     else:
-        G, h = generate_inequalities_constraints_mat(N, nx, nu, xmin, xmax, umin, umax)
+        G, h = generate_inequalities_constraints_mat(
+            N, nx, nu, xmin, xmax, umin, umax)
         #  print(G)
         #  print(h)
 
@@ -362,7 +362,8 @@ def test3():
         plt.legend()
         plt.grid(True)
 
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -492,7 +493,8 @@ def test6():
     xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
     xmax = np.matrix([[3.5], [2.0]])  # state constraints
 
-    x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x, u = use_modeling_tool(A, B, N, Q, R, P, x0,
+                             umax=umax, umin=umin, xmin=xmin, xmax=xmax)
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -506,7 +508,8 @@ def test6():
         plt.legend()
         plt.grid(True)
 
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()
@@ -552,6 +555,8 @@ def test7():
     rx2 = np.array(x[1, :]).flatten()
     ru = np.array(u[0, :]).flatten()
 
+    print("aa")
+
     if DEBUG_:
         flg, ax = plt.subplots(1)
         plt.plot(rx1, label="x1")
@@ -561,7 +566,8 @@ def test7():
         plt.grid(True)
 
     #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
-    x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    x, u = opt_mpc_with_state_constr(
+        A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0)
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()

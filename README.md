@@ -4,6 +4,16 @@
 
 Python Codes for Advanced Control
 
+# Dependencies
+
+- cvxpy 0.4.x
+
+- scipy 0.19.3
+
+- numpy 1.13.3
+
+- matplotlib 1.5.3
+
 # lqr_sample
 
 This is a sample code of Linear-Quadratic Regulator
