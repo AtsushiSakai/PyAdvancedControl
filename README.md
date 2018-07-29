@@ -6,6 +6,8 @@ Python Codes for Advanced Control
 
 # Dependencies
 
+- Python 3.5.2
+
 - cvxpy 0.4.x
 
 - scipy 0.19.3
