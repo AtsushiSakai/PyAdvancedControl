@@ -12,6 +12,8 @@ import math
 import time
 import cvxpy
 
+print("cvxpy version:", cvxpy.__version__)
+
 
 l_bar = 2.0  # length of bar
 M = 1.0  # [kg]
@@ -64,8 +66,8 @@ def simulation(x, u):
 
 def mpc_control(x0):
 
-    x = cvxpy.Variable(nx, T + 1)
-    u = cvxpy.Variable(nu, T)
+    x = cvxpy.Variable((nx, T + 1))
+    u = cvxpy.Variable((nu, T))
 
     A, B = get_model_matrix()
 
@@ -75,7 +77,7 @@ def mpc_control(x0):
         cost += cvxpy.quad_form(x[:, t + 1], Q)
         cost += cvxpy.quad_form(u[:, t], R)
         constr += [x[:, t + 1] == A * x[:, t] + B * u[:, t]]
-    constr += [x[:, 0] == x0]
+    constr += [x[:, 0] == x0[:, 0]]
     prob = cvxpy.Problem(cvxpy.Minimize(cost), constr)
 
     start = time.time()
