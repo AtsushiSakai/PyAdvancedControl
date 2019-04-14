@@ -77,6 +77,7 @@ def mpc_control(x0):
         cost += cvxpy.quad_form(x[:, t + 1], Q)
         cost += cvxpy.quad_form(u[:, t], R)
         constr += [x[:, t + 1] == A * x[:, t] + B * u[:, t]]
+    # print(x0)
     constr += [x[:, 0] == x0[:, 0]]
     prob = cvxpy.Problem(cvxpy.Minimize(cost), constr)
 
