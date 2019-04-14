@@ -1,6 +1,4 @@
-#! /usr/bin/python
-# -*- coding: utf-8 -*-
-u""" 
+""" 
 MPC driving simulation to target point 
 
 author Atsushi Sakai
@@ -23,7 +21,7 @@ min_speed = -5.0
 
 
 def LinealizeCarModel(xb, u, dt, lr):
-    u"""
+    """
     TODO conplete model
     """
 
@@ -57,7 +55,9 @@ def LinealizeCarModel(xb, u, dt, lr):
     tm[2, 0] = a * dt
     tm[3, 0] = v / lr * sin(beta) * dt
     C = xb + tm
-    C = C - A * xb - B * u
+    C = C - A @ xb - B @ u
+
+    # print(A, B, C)
 
     return A, B, C
 
@@ -75,15 +75,13 @@ def NonlinearModel(x, u, dt, lr):
 def CalcInput(A, B, C, x, u):
 
     x_0 = x[:]
-    x = Variable(x.shape[0], T + 1)
-    u = Variable(u.shape[0], T)
+    x = Variable((x.shape[0], T + 1))
+    u = Variable((u.shape[0], T))
 
     # MPC controller
     states = []
     for t in range(T):
-        #  constr = [x[:,t+1] == A*x[:,t] + B*u[:,t]+C, abs(u[:,t])<=0.5, x[2,t+1]<= max_speed, x[2,t+1] >= min_speed]
         constr = [x[:, t + 1] == A * x[:, t] + B * u[:, t] + C]
-        #  constr = [x[:,t+1] == NonlinearModel(x[:,t],u,dt,lr)]
         constr += [abs(u[:, t]) <= 0.5]
         constr += [x[2, t + 1] <= max_speed]
         constr += [x[2, t + 1] >= min_speed]
@@ -103,8 +101,8 @@ def CalcInput(A, B, C, x, u):
     #  result=prob.solve(verbose=True)
     result = prob.solve()
     elapsed_time = time.time() - start
-    print ("calc time:{0}".format(elapsed_time) + "[sec]")
-    print (prob.value)
+    print("calc time:{0}".format(elapsed_time) + "[sec]")
+    print(prob.value)
 
     if prob.status != OPTIMAL:
         print("Cannot calc opt")
@@ -118,9 +116,10 @@ def GetListFromMatrix(x):
 
 
 def Main():
-    x0 = np.matrix([0.0, 0.0, 0.0, 0.0]).T  # [x,y,v theta]
+    x0 = np.array([[0.0, 0.0, 0.0, 0.0]]).T  # [x,y,v theta]
+    print(x0)
     x = x0
-    u = np.matrix([0.0, 0.00]).T  # [a,beta]
+    u = np.array([[0.0, 0.0]]).T  # [a,beta]
     plt.figure(num=None, figsize=(12, 12))
 
     mincost = 100000
@@ -132,12 +131,13 @@ def Main():
         u[0, 0] = GetListFromMatrix(ustar.value[0, :])[0]
         u[1, 0] = float(ustar[1, 0].value)
 
-        x = A * x + B * u
+        x = A @ x + B @ u
 
         plt.subplot(3, 1, 1)
         plt.plot(target[0], target[1], 'xb')
         plt.plot(x[0], x[1], '.r')
-        plt.plot(GetListFromMatrix(xstar.value[0, :]), GetListFromMatrix(xstar.value[1, :]), '-b')
+        plt.plot(GetListFromMatrix(xstar.value[0, :]), GetListFromMatrix(
+            xstar.value[1, :]), '-b')
         plt.axis("equal")
         plt.xlabel("x[m]")
         plt.ylabel("y[m]")

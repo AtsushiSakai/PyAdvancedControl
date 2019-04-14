@@ -27,8 +27,8 @@ def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xma
     (nx, nu) = B.shape
 
     # mpc calculation
-    x = cvxpy.Variable(nx, N + 1)
-    u = cvxpy.Variable(nu, N)
+    x = cvxpy.Variable((nx, N + 1))
+    u = cvxpy.Variable((nu, N))
 
     costlist = 0.0
     constrlist = []
@@ -40,23 +40,23 @@ def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xma
         constrlist += [x[:, t + 1] == A * x[:, t] + B * u[:, t]]
 
         if xmin is not None:
-            constrlist += [x[:, t] >= xmin]
+            constrlist += [x[:, t] >= xmin[:, 0]]
         if xmax is not None:
-            constrlist += [x[:, t] <= xmax]
+            constrlist += [x[:, t] <= xmax[:, 0]]
 
     costlist += 0.5 * cvxpy.quad_form(x[:, N], P)  # terminal cost
     if xmin is not None:
-        constrlist += [x[:, N] >= xmin]
+        constrlist += [x[:, N] >= xmin[:, 0]]
     if xmax is not None:
-        constrlist += [x[:, N] <= xmax]
+        constrlist += [x[:, N] <= xmax[:, 0]]
+
+    constrlist += [x[:, 0] == x0[:, 0]]  # inital state constraints
+    if umax is not None:
+        constrlist += [u <= umax]  # input constraints
+    if umin is not None:
+        constrlist += [u >= umin]  # input constraints
 
     prob = cvxpy.Problem(cvxpy.Minimize(costlist), constrlist)
-
-    prob.constraints += [x[:, 0] == x0]  # inital state constraints
-    if umax is not None:
-        prob.constraints += [u <= umax]  # input constraints
-    if umin is not None:
-        prob.constraints += [u >= umin]  # input constraints
 
     prob.solve(verbose=True)
 
@@ -130,7 +130,7 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
     #  print(Ae.shape)
 
     # calc be
-    be = np.vstack((A, np.zeros(((N - 1) * nx, nx)))) * x0
+    be = np.vstack((A, np.zeros(((N - 1) * nx, nx)))) @ x0
     #  print(be)
     #  print(be.shape)
 
@@ -156,11 +156,10 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
         sol = pyecosqp.ecosqp(H, q, A=G, B=h, Aeq=Ae, Beq=be)
 
     #  print(sol)
-    fx = np.matrix(sol["x"])
-    #  print(fx)
+    fx = np.array(sol["x"])
 
-    u = fx[0, 0:N * nu].reshape(N, nu).T
-    x = fx[0, -N * nx:].reshape(N, nx).T
+    u = fx[0:N * nu].reshape(N, nu).T
+    x = fx[-N * nx:].reshape(N, nx).T
     x = np.hstack((x0, x))
     #  print(x)
     #  print(u)
@@ -170,8 +169,8 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
 
 def test3():
     print("start!!")
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    B = np.matrix([[-1.0], [2.0]])
+    A = np.array([[0.8, 1.0], [0, 0.9]])
+    B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
     N = 10  # number of horizon
@@ -181,7 +180,7 @@ def test3():
     umax = 0.7
     umin = -0.7
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
 
     rx1 = np.array(x[0, :]).flatten()
@@ -217,8 +216,8 @@ def test3():
 
 def test4():
     print("start!!")
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    B = np.matrix([[-1.0], [2.0]])
+    A = np.array([[0.8, 1.0], [0, 0.9]])
+    B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
     N = 10  # number of horizon
@@ -226,7 +225,7 @@ def test4():
     R = np.eye(nu)
     P = np.eye(nx)
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
 
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
 
@@ -262,8 +261,8 @@ def test4():
 
 def test5():
     print("start!!")
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    B = np.matrix([[-1.0], [2.0]])
+    A = np.array([[0.8, 1.0], [0, 0.9]])
+    B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
     N = 10  # number of horizon
@@ -271,7 +270,7 @@ def test5():
     R = np.eye(nu)
     P = np.eye(nx)
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
     umax = 0.7
 
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax)
@@ -308,8 +307,8 @@ def test5():
 
 def test6():
     print("start!!")
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    B = np.matrix([[-1.0], [2.0]])
+    A = np.array([[0.8, 1.0], [0, 0.9]])
+    B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
     N = 10  # number of horizon
@@ -317,14 +316,14 @@ def test6():
     R = np.eye(nu)
     P = np.eye(nx)
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
     umax = 0.7
     umin = -0.7
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
 
-    xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
-    xmax = np.matrix([[3.5], [2.0]])  # state constraints
+    xmin = np.array([[-3.5], [-0.5]])  # state constraints
+    xmax = np.array([[3.5], [2.0]])  # state constraints
 
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0,
                              umax=umax, umin=umin, xmin=xmin, xmax=xmax)
@@ -363,8 +362,8 @@ def test6():
 def test7():
     print("start!!")
 
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    B = np.matrix([[-1.0], [2.0]])
+    A = np.array([[0.8, 1.0], [0, 0.9]])
+    B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
     N = 3  # number of horizon
@@ -372,18 +371,13 @@ def test7():
     R = np.eye(nu)
     P = np.eye(nx)
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
     umax = 0.7
     umin = -0.7
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
-
-    #  xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
-    #  xmax = np.matrix([[3.5], [2.0]])  # state constraints
+    x0 = np.array([[1.0], [2.0]])  # init state
 
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
-    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin, xmin=xmin, xmax=xmax)
-    #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -422,8 +416,8 @@ def test7():
 def test8():
     print("start!!")
 
-    A = np.matrix([[0.8, 1.0], [0, 0.9]])
-    B = np.matrix([[-1.0], [2.0]])
+    A = np.array([[0.8, 1.0], [0, 0.9]])
+    B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
     N = 5  # number of horizon
@@ -431,16 +425,16 @@ def test8():
     R = np.eye(nu)
     P = np.eye(nx)
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
     umax = 0.7
     umin = -0.7
 
-    x0 = np.matrix([[1.0], [2.0]])  # init state
+    x0 = np.array([[1.0], [2.0]])  # init state
 
     start = time.time()
 
-    xmin = np.matrix([[-3.5], [-0.5]])  # state constraints
-    xmax = np.matrix([[3.5], [2.0]])  # state constraints
+    xmin = np.array([[-3.5], [-0.5]])  # state constraints
+    xmax = np.array([[3.5], [2.0]])  # state constraints
 
     #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0,
@@ -448,7 +442,7 @@ def test8():
 
     #  x, u = use_modeling_tool(A, B, N, Q, R, P, x0)
     elapsed_time = time.time() - start
-    print ("modeling tool modeling elapsed_time:{0}".format(
+    print("modeling tool modeling elapsed_time:{0}".format(
         elapsed_time) + "[sec]")
 
     rx1 = np.array(x[0, :]).flatten()
@@ -470,7 +464,7 @@ def test8():
     #  A, B, N, Q, R, P, x0, umax=umax, umin=umin)
     #  x, u = opt_mpc_with_state_constr(A, B, N, Q, R, P, x0)
     elapsed_time = time.time() - start
-    print ("hand modeling elapsed_time:{0}".format(elapsed_time) + "[sec]")
+    print("hand modeling elapsed_time:{0}".format(elapsed_time) + "[sec]")
 
     #  print(x)
     print(u)
@@ -498,22 +492,22 @@ def test_output_check(rx1, rx2, ru, x1, x2, u):
     print("test x1")
     for (i, j) in zip(rx1, x1):
         print(i, j)
-        assert (i - j) <= 0.001, "Error"
+        assert (i - j) <= 0.01, "Error"
     print("test x2")
     for (i, j) in zip(rx2, x2):
         print(i, j)
-        assert (i - j) <= 0.001, "Error"
+        assert (i - j) <= 0.01, "Error"
     print("test u")
     for (i, j) in zip(ru, u):
         print(i, j)
-        assert (i - j) <= 0.001, "Error"
+        assert (i - j) <= 0.01, "Error"
 
 
 if __name__ == '__main__':
     DEBUG_ = True
-    #  test3()
-    #  test4()
-    #  test5()
-    #  test6()
-    #  test7()
+    test3()
+    test4()
+    test5()
+    test6()
+    test7()
     test8()
