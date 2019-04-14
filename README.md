@@ -6,13 +6,13 @@ Python Codes for Advanced Control
 
 # Dependencies
 
-- Python 3.5.5
+- Python 3.7.x
 
-- cvxpy 0.4.x
+- cvxpy 1.0.x
 
 - ecos 2.0.7
 
-- cvxopt 1.2.-
+- cvxopt 1.2.x
 
 - scipy 1.1.0
 

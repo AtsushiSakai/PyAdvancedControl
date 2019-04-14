@@ -1,7 +1,6 @@
 language: python
 python:
-  - 2.7
-  - 3.5
+  - 3.7
 
 before_install:
     - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -12,9 +11,8 @@ before_install:
     - sudo rm -rf /dev/shm
     - sudo ln -s /run/shm /dev/shm
 install:
-    - conda install -y -c cvxgrp cvxpy
-    - conda install -y -c conda-forge matplotlib
-    - conda install -y -c anaconda cvxopt
+    - pip intall csvpy
+    - pip intall cvxopt
 
 script:
     - python --version
